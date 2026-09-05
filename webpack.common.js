@@ -28,7 +28,7 @@ export default {
         loader: "html-loader",
       },
       {
-        test: /\.(png|jpe?g|gif|webp)$/i,
+        test: /\.(png|jpe?g|gif|webp|svg|ico)$/i,
         type: "asset/resource",
         generator: {
           filename: "assets/images/[name][ext]",
