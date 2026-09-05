@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "pathsRelativeTo": "assets/",
+  "description": "Optional landscape variants for the illustrative weather hero. These are generic scenes, not city photographs or live observations.",
+  "conditions": [
+    "clear",
+    "partly-cloudy",
+    "overcast",
+    "rain",
+    "thunderstorm",
+    "snow",
+    "fog"
+  ],
+  "phases": ["day", "night"],
+  "categories": {
+    "coastal": "images/weather/weather-{condition}-{phase}.webp",
+    "urban": "images/weather/urban/weather-urban-{condition}-{phase}.webp",
+    "countryside": "images/weather/countryside/weather-countryside-{condition}-{phase}.webp"
+  },
+  "fallback": "images/weather/weather-fallback.svg",
+  "recommendedSelectionOrder": [
+    "userOverride",
+    "coastal",
+    "urban",
+    "countryside",
+    "fallback"
+  ],
+  "notes": [
+    "Coastal and urban are real-world overlapping properties; the default policy gives a known coastal setting priority over urban scenery.",
+    "Do not infer countryside merely because a location is not recognized as urban.",
+    "If the landscape category is uncertain, use the neutral fallback and expose the user's landscape preference control.",
+    "Replace {condition} and {phase} only after the normalizer has validated them against the arrays above."
+  ]
+}

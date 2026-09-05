@@ -1,0 +1,484 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3950,
+      "sha256": "18e703c93bcf26db36891ac60994c2a14ba431dc8836d8bc67baf6b3feb9a9f4"
+    },
+    {
+      "path": "asset-catalog.html",
+      "bytes": 24913,
+      "sha256": "43aa1aaa19ddf41353d325a06e79f7c14d11d1ce483ee5a3cefbfe8c1d1bbaf4"
+    },
+    {
+      "path": "asset-manifest.json",
+      "bytes": 2326,
+      "sha256": "d1f63df61fd0300fdd8b89c4e1e6d691394cf3573abb3ec501f98c1294590033"
+    },
+    {
+      "path": "branding/app-icon-192.png",
+      "bytes": 8751,
+      "sha256": "9739a79a89e1197eaac8d619398686d48f14b7a28187f33fb458f780bd6da9e4"
+    },
+    {
+      "path": "branding/app-icon-512.png",
+      "bytes": 28311,
+      "sha256": "5149a34dfe0f0301b6d1a8baa6f17620b49d1abf38b9b687438d91887162107d"
+    },
+    {
+      "path": "branding/apple-touch-icon.png",
+      "bytes": 8121,
+      "sha256": "b0bd1663bf607e01ac991ed552c84ec82da278984fb7846d2ed0a89c24820ab5"
+    },
+    {
+      "path": "branding/favicon-16.png",
+      "bytes": 563,
+      "sha256": "d4304267fcec0cebe711c8f66e470d894b26e3b1256d059538630915ce763195"
+    },
+    {
+      "path": "branding/favicon-32.png",
+      "bytes": 1275,
+      "sha256": "b24a41bca6dc7711e9d4f1e3041d79de2cff11da84fbb87c7eb473dd80adfa1a"
+    },
+    {
+      "path": "branding/favicon.ico",
+      "bytes": 5998,
+      "sha256": "e2ef9f0ad568b6ab43f5976a886968600b4cef4de0ec6fb8cfc6ffe2711e0936"
+    },
+    {
+      "path": "branding/favicon.svg",
+      "bytes": 522,
+      "sha256": "97df829350f7d6ee1358811cd53b83352e6cc16f03c21e5f6ad4a12e01e8baac"
+    },
+    {
+      "path": "branding/solaris-mark-mono.svg",
+      "bytes": 283,
+      "sha256": "699734b0008237e3fc71bc219680beaec8ea35d70e6daac0e374dfe31ae6033c"
+    },
+    {
+      "path": "branding/solaris-mark.svg",
+      "bytes": 469,
+      "sha256": "4f61124214816d4a97558c863f1ecfd92770fd8717fd1e4ce624952e9798ddb4"
+    },
+    {
+      "path": "branding/solaris-wordmark-on-dark.svg",
+      "bytes": 25373,
+      "sha256": "2d523c5c8236d546daf24722a24012fcbfce8d0b9c93df50e9c56f0f107b4085"
+    },
+    {
+      "path": "branding/solaris-wordmark-on-light.svg",
+      "bytes": 25373,
+      "sha256": "9dc9b96509906320537ea1536d168951cdeef8ed7eda5792f93410503a25bcf0"
+    },
+    {
+      "path": "fonts/cormorant-garamond-400.woff2",
+      "bytes": 63724,
+      "sha256": "639f08f99872b2481275e794dbb9342f404d1a5d06973e6bdb2c80605e53d2f1"
+    },
+    {
+      "path": "fonts/cormorant-garamond-500.ttf",
+      "bytes": 290496,
+      "sha256": "1724047c8988ca5155bff667bc48fa52e97d57aabc6b42eebbf986f21a4be20b"
+    },
+    {
+      "path": "fonts/cormorant-garamond-500.woff2",
+      "bytes": 64424,
+      "sha256": "9c321981f21797fecc6296ac79fdfb9002f2ea72bd0342e5eb47cb9244d258a7"
+    },
+    {
+      "path": "fonts/cormorant-garamond-600.ttf",
+      "bytes": 290392,
+      "sha256": "69e7ae35cba23d962227b86f99217c250e642e4c6f6104b4f3ec465039e4e2d8"
+    },
+    {
+      "path": "fonts/cormorant-garamond-600.woff2",
+      "bytes": 64688,
+      "sha256": "6fd2aabe8de8f3f963da194069fd8bb41029e0242606aac05fcd5cd9b50a35cd"
+    },
+    {
+      "path": "fonts/fonts.css",
+      "bytes": 1148,
+      "sha256": "e309e09f1174f82c3210f99f05dd9d1d0afaccffcf3f182b639f136bd5c82c4b"
+    },
+    {
+      "path": "fonts/inter-400.woff2",
+      "bytes": 108536,
+      "sha256": "bae5bdce36b69f619ab2dae08ac34e2d8a6430a43719555594eeaeb4fd10dcd1"
+    },
+    {
+      "path": "fonts/inter-500.ttf",
+      "bytes": 325304,
+      "sha256": "8c883f63b2c4157d997319f2c8bc6995ed4357ef371940d31ca159004a4aae63"
+    },
+    {
+      "path": "fonts/inter-500.woff2",
+      "bytes": 111636,
+      "sha256": "72f0f66d6a9a2033b2a7a37748e3eb24732023a225bd9b5ccf042f5096026c0c"
+    },
+    {
+      "path": "fonts/inter-600.woff2",
+      "bytes": 112048,
+      "sha256": "e5e04b1fa6245b69590a76da5c9efcf1ca430c12113bc2e5606907ab0127dc35"
+    },
+    {
+      "path": "fonts/inter-700.ttf",
+      "bytes": 326468,
+      "sha256": "b37284b5701b6b168dfc770aa1a4ac492106422fd3ba76bc7641e37434e8019c"
+    },
+    {
+      "path": "fonts/inter-700.woff2",
+      "bytes": 112588,
+      "sha256": "9e8213ce5437effb1f29b53f169053305620d9803d9648a79ed3beda43de89ae"
+    },
+    {
+      "path": "icons/icon-sources.json",
+      "bytes": 1496,
+      "sha256": "02a13f170b85e054afc147f43fd270aa9c08370794a46d4ded4e52c260861171"
+    },
+    {
+      "path": "icons/ui/add.svg",
+      "bytes": 285,
+      "sha256": "66129b1dbbca379e7f138a786d3c3bb0d759749ab86511e504af63c626808d56"
+    },
+    {
+      "path": "icons/ui/alert.svg",
+      "bytes": 370,
+      "sha256": "b16b37047ed8e48684a53a2149370674ca59981bccec24b32f1a71ea30f9b2b5"
+    },
+    {
+      "path": "icons/ui/calendar.svg",
+      "bytes": 481,
+      "sha256": "d2295d08966b77ec1e31479cdc64aca1f7887cf96e11e77cfdd7875db73b3b67"
+    },
+    {
+      "path": "icons/ui/chart.svg",
+      "bytes": 426,
+      "sha256": "11ba50787b409debb2cae4c25687141f0a854ee5ba5164943b1070056c4b047d"
+    },
+    {
+      "path": "icons/ui/check.svg",
+      "bytes": 272,
+      "sha256": "6ec3c336445a77d8224c06dc9eeed8ff10facc44afd5e2890735e6a98eb2dde2"
+    },
+    {
+      "path": "icons/ui/chevron-down.svg",
+      "bytes": 269,
+      "sha256": "c66398abc5e96bffcaa0926a78cf96ae24fa015cd77b7c21c6e522e90df11078"
+    },
+    {
+      "path": "icons/ui/chevron-left.svg",
+      "bytes": 271,
+      "sha256": "3e029630d5e7d2ad1fa31b3b3fe1b26a78e71115656f8a29df47d20023e01a59"
+    },
+    {
+      "path": "icons/ui/chevron-right.svg",
+      "bytes": 270,
+      "sha256": "91c87d78e3fa72105ba356fa08122029b9a4d56ff8f876998c34e0e1b832ae22"
+    },
+    {
+      "path": "icons/ui/chevron-up.svg",
+      "bytes": 271,
+      "sha256": "cf865d0e36303cd39b0b43d906d45dfc64d472ea0443b20c8b85cff1ef7e7139"
+    },
+    {
+      "path": "icons/ui/clock.svg",
+      "bytes": 300,
+      "sha256": "1290c6de3459f8d7eaa0b783266353ebc4cd686e9098e8c0655379653b344c16"
+    },
+    {
+      "path": "icons/ui/close.svg",
+      "bytes": 289,
+      "sha256": "2b51b67d8c95eef51d6591e8924f77c5bfb283a311a732b1b9420d66627e4a28"
+    },
+    {
+      "path": "icons/ui/compass.svg",
+      "bytes": 380,
+      "sha256": "ef6476a99c76aea955f74819e11a1c5b885f1e94db907a041858bd0cadcb705e"
+    },
+    {
+      "path": "icons/ui/error.svg",
+      "bytes": 357,
+      "sha256": "8aaea1efa8c2166263321825fbd0d2bf12e2bd0e66408473ee57bffb6268501f"
+    },
+    {
+      "path": "icons/ui/external-link.svg",
+      "bytes": 357,
+      "sha256": "f4dcd3077fec2e37294f682386b0f41a049719f0a0887fd7465f649be44d93a0"
+    },
+    {
+      "path": "icons/ui/favorite.svg",
+      "bytes": 621,
+      "sha256": "144841335bcd71b173c4d99e56fd7654400d19a7ff2c3a611853b0c66775795b"
+    },
+    {
+      "path": "icons/ui/history.svg",
+      "bytes": 349,
+      "sha256": "68d684e5d42f68cfdcace706c8e6cdfe26776f811e2b6be7e7b7748cdf71ba51"
+    },
+    {
+      "path": "icons/ui/humidity.svg",
+      "bytes": 501,
+      "sha256": "6dc0deef52a10467558eebcbfaf6cbfff57b83bd58680bba62ba90b6dc19c90d"
+    },
+    {
+      "path": "icons/ui/info.svg",
+      "bytes": 319,
+      "sha256": "417530195596b55c03c98278458ba7a0921481421099ae84267750dab6b2c93c"
+    },
+    {
+      "path": "icons/ui/loading.svg",
+      "bytes": 284,
+      "sha256": "374750133c233a4f615ba4bda8dfd4279696c62cb314248058144be655fb356a"
+    },
+    {
+      "path": "icons/ui/location-off.svg",
+      "bytes": 549,
+      "sha256": "5a34ca3ab8b86a8ccc08654f96597a6cedf2db47923b5106e181f76433bf767c"
+    },
+    {
+      "path": "icons/ui/location.svg",
+      "bytes": 459,
+      "sha256": "da86214b53567f629c71ca3567135246f5ba909ecf707efadb552a32b4c7df37"
+    },
+    {
+      "path": "icons/ui/menu.svg",
+      "bytes": 304,
+      "sha256": "47aeb15d6c0711251692aeac698cf7e8a506dcf74de9e85fd9a13033b42bc282"
+    },
+    {
+      "path": "icons/ui/offline.svg",
+      "bytes": 503,
+      "sha256": "780ef84599c4f3c51c601597b0668b4102191cb598a79a0194dc9acc54cd9cae"
+    },
+    {
+      "path": "icons/ui/precipitation.svg",
+      "bytes": 358,
+      "sha256": "80f71c926b6c16e3bfceeb61a6ac26b3f2f1a90f4d8c6236860df036648f0dd6"
+    },
+    {
+      "path": "icons/ui/pressure.svg",
+      "bytes": 307,
+      "sha256": "d805619f1f01ada13dcb5758809dd60820496e9ef7f0b0710fa69c7de8a4eaab"
+    },
+    {
+      "path": "icons/ui/refresh.svg",
+      "bytes": 413,
+      "sha256": "55eab13493e139748ba9c39b7fd4ccc34b9641052d63a46dd5ae3217fd3a5396"
+    },
+    {
+      "path": "icons/ui/remove.svg",
+      "bytes": 406,
+      "sha256": "81da22c25f7a819a81b35bd7ae055decc26228195dba6f39582bae6f2ad65331"
+    },
+    {
+      "path": "icons/ui/saved-locations.svg",
+      "bytes": 375,
+      "sha256": "1ea1be36b4b6b97f9f418c6a439a69c499d907f9338df69641ac862c6f4bb2e8"
+    },
+    {
+      "path": "icons/ui/search.svg",
+      "bytes": 304,
+      "sha256": "3bd00ba3cb97a51f1f311fcf9b6c1fea9a6b427981f2dd99efabb80a7b613fdf"
+    },
+    {
+      "path": "icons/ui/success.svg",
+      "bytes": 302,
+      "sha256": "6376986b7085dadcb275d01aee181bd484cea0d63a94804b689699de7b6db787"
+    },
+    {
+      "path": "icons/ui/sunrise.svg",
+      "bytes": 446,
+      "sha256": "65a95f07cdd61a6335fce4f6e7cd7b98af126b32ad85dd582b4d792bad1295cb"
+    },
+    {
+      "path": "icons/ui/sunset.svg",
+      "bytes": 448,
+      "sha256": "00869dbb9e25eca3eb2b63f249e61db69d048b6c7880d53fd89751c978f244da"
+    },
+    {
+      "path": "icons/ui/table.svg",
+      "bytes": 353,
+      "sha256": "081c6d303470a4d43ebc121bb293375b47df178d98567a5073e10d4b1c0b9794"
+    },
+    {
+      "path": "icons/ui/temperature.svg",
+      "bytes": 299,
+      "sha256": "45b45bcce314c83278a0279552be3eed23851e5f4a9481c5714edf64afcad671"
+    },
+    {
+      "path": "icons/ui/undo.svg",
+      "bytes": 338,
+      "sha256": "f66ba67d1a7627a2b36f2b32a6a03106d350b909c18834f0e26b5236f1cad469"
+    },
+    {
+      "path": "icons/ui/uv-index.svg",
+      "bytes": 486,
+      "sha256": "2d835130bb6fe8264b49311066cbf3d737ac2f928dcf5752a9918ffbcf803f1f"
+    },
+    {
+      "path": "icons/ui/visibility.svg",
+      "bytes": 389,
+      "sha256": "4669921cf92c586b266f236ae4ff2392e7cd2f35e87aa9e5d2cabf8838a565a3"
+    },
+    {
+      "path": "icons/ui/wind.svg",
+      "bytes": 361,
+      "sha256": "a03f9c5ac9f972fc8473ed35178aedcc494428afb9dc0c2daf620aa83d8594da"
+    },
+    {
+      "path": "icons/weather/clear-day.svg",
+      "bytes": 481,
+      "sha256": "5a869c559008ba364dfbef774dcf66ddba136f03a769c8060ce903f92171a51c"
+    },
+    {
+      "path": "icons/weather/clear-night.svg",
+      "bytes": 362,
+      "sha256": "ab2b8f07d93546666a9aab0e4896f3e5275d5c4fadf194ea1b3196b497f87fad"
+    },
+    {
+      "path": "icons/weather/fog.svg",
+      "bytes": 348,
+      "sha256": "f1261e4e1e53b63fc19898d5fc4e1eed6d60a938b889d59d578ad2397b6b912c"
+    },
+    {
+      "path": "icons/weather/overcast.svg",
+      "bytes": 303,
+      "sha256": "3100e36123849c387181b44969cbbb76fbe543986e2c454fa00188484f0d2f02"
+    },
+    {
+      "path": "icons/weather/partly-cloudy-day.svg",
+      "bytes": 445,
+      "sha256": "7d9988a1f9a3eebe50e2cede39eade830b9ebcfc00d64c88280ad9087e3db1cd"
+    },
+    {
+      "path": "icons/weather/partly-cloudy-night.svg",
+      "bytes": 442,
+      "sha256": "2b54ace867b4db0f2db042b2fe57f9d7779e1333dcd35d2fd9a25c46d31e123e"
+    },
+    {
+      "path": "icons/weather/rain.svg",
+      "bytes": 367,
+      "sha256": "97207dedeeb3fb2ac3e33e9099383f6039b1ee29e65c085aab707ef22b7a6f69"
+    },
+    {
+      "path": "icons/weather/sleet.svg",
+      "bytes": 432,
+      "sha256": "5485475471c5b8f9bf6ba187eb0e363fc238eed88daa204340adbbd9b43996f3"
+    },
+    {
+      "path": "icons/weather/snow.svg",
+      "bytes": 438,
+      "sha256": "8a27e187b3df2c7f3581c6f350f3908c47d361de5f05408545dce36828fe274b"
+    },
+    {
+      "path": "icons/weather/thunderstorm.svg",
+      "bytes": 336,
+      "sha256": "0605b279eace812bec3b2e2d980bd197f27301c2292cca00b88912ccbcc02f2f"
+    },
+    {
+      "path": "icons/weather/unknown.svg",
+      "bytes": 342,
+      "sha256": "a4cbc1b45c3875ec366490e1a73957ffb7ffa04f5a69dd5479c6cb92f208ddc2"
+    },
+    {
+      "path": "icons/weather/wind.svg",
+      "bytes": 356,
+      "sha256": "95c806a40650e668c57a0e26343960c62b40f63bad91ef0846d9a44813d89a4d"
+    },
+    {
+      "path": "images/weather/weather-clear-day.webp",
+      "bytes": 119472,
+      "sha256": "8afb7d044ea24d7f59ff4bebc2ace29cde519af0ba20a7cd861785be03d0d619"
+    },
+    {
+      "path": "images/weather/weather-clear-night.webp",
+      "bytes": 74280,
+      "sha256": "a07bd4653d4649daf2d6168e8da8056af0f5aaeb618f1ca60c6842eaa534679e"
+    },
+    {
+      "path": "images/weather/weather-fallback.svg",
+      "bytes": 236,
+      "sha256": "14c2b9ed6fced94872a85ee64cb45877df2556fc9bb38d22ccd7b991bb19fe2c"
+    },
+    {
+      "path": "images/weather/weather-fog-day.webp",
+      "bytes": 29900,
+      "sha256": "4d7fd1b8c00bd075edf04805ca2c059cb8dd32d80cc1606c0be3ce281a2f1535"
+    },
+    {
+      "path": "images/weather/weather-fog-night.webp",
+      "bytes": 39558,
+      "sha256": "052711df9ca54d7734239d454c1c798a3975b28e5910a6a32d2701bd86390f53"
+    },
+    {
+      "path": "images/weather/weather-overcast-day.webp",
+      "bytes": 78328,
+      "sha256": "cf3ade3cd52031c2bfac2ce0d6eb3a561600774a25f34de2e288fd2787323a32"
+    },
+    {
+      "path": "images/weather/weather-overcast-night.webp",
+      "bytes": 60870,
+      "sha256": "e92515bb1f999e8c8ad467eae6058f4f1fd591a4c0b398e9b2e24072702393f2"
+    },
+    {
+      "path": "images/weather/weather-partly-cloudy-day.webp",
+      "bytes": 157758,
+      "sha256": "8ce4a4f2adf54aa979d5fd3c60adc97ec0aae427fedd22176c7bc43a82dfc4d6"
+    },
+    {
+      "path": "images/weather/weather-partly-cloudy-night.webp",
+      "bytes": 128952,
+      "sha256": "969a82a5d6e3abcdbe9369f604bdeede5dbd2090f5b988ba636b65a57e9cdb6d"
+    },
+    {
+      "path": "images/weather/weather-rain-day.webp",
+      "bytes": 125246,
+      "sha256": "d7fac44e4e06e21b0e3f30440053e425e76cbb9185cd23c8df013ef1935a9c02"
+    },
+    {
+      "path": "images/weather/weather-rain-night.webp",
+      "bytes": 103100,
+      "sha256": "32986c40984992cc8226537cbeb928e9ac75a11a1dcf9dc6c5d0e938a943df95"
+    },
+    {
+      "path": "images/weather/weather-snow-day.webp",
+      "bytes": 128424,
+      "sha256": "cabca59a7112cd34851d70d8324c1462d68b126721b9e39c39b78ab05f18767c"
+    },
+    {
+      "path": "images/weather/weather-snow-night.webp",
+      "bytes": 118144,
+      "sha256": "6d04d1b1e1c1dd7df0efe07a3ef4e1aa5fb8cfb0ad9d39d9ab3ce9eacd8c0792"
+    },
+    {
+      "path": "images/weather/weather-thunderstorm-day.webp",
+      "bytes": 100666,
+      "sha256": "d88a118143e0742c5abf427b6c0f9cd8015b5e3a564843174d95e601932f78a2"
+    },
+    {
+      "path": "images/weather/weather-thunderstorm-night.webp",
+      "bytes": 83648,
+      "sha256": "27b476e7e5a80e12857e826f929d106905f9d2727b52d5435082421818b9b7fc"
+    },
+    {
+      "path": "licenses/asset-provenance.md",
+      "bytes": 2072,
+      "sha256": "45f5ba69da85f61a977d54c0e63014fd841a9b69402f464d3e02e1d1a34ed00e"
+    },
+    {
+      "path": "licenses/cormorant-garamond-ofl.txt",
+      "bytes": 4387,
+      "sha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956"
+    },
+    {
+      "path": "licenses/inter-ofl.txt",
+      "bytes": 4377,
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+    },
+    {
+      "path": "licenses/lucide-isc.txt",
+      "bytes": 3208,
+      "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+    }
+  ]
+}

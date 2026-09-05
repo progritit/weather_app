@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "pathsRelativeTo": "assets/",
+  "description": "Illustrative weather scenery, not city photographs or live observations. App must choose local day/night separately from condition.",
+  "fallback": "images/weather/weather-fallback.svg",
+  "themes": {
+    "clear": {
+      "day": "images/weather/weather-clear-day.webp",
+      "night": "images/weather/weather-clear-night.webp"
+    },
+    "partly-cloudy": {
+      "day": "images/weather/weather-partly-cloudy-day.webp",
+      "night": "images/weather/weather-partly-cloudy-night.webp"
+    },
+    "overcast": {
+      "day": "images/weather/weather-overcast-day.webp",
+      "night": "images/weather/weather-overcast-night.webp"
+    },
+    "rain": {
+      "day": "images/weather/weather-rain-day.webp",
+      "night": "images/weather/weather-rain-night.webp"
+    },
+    "thunderstorm": {
+      "day": "images/weather/weather-thunderstorm-day.webp",
+      "night": "images/weather/weather-thunderstorm-night.webp"
+    },
+    "snow": {
+      "day": "images/weather/weather-snow-day.webp",
+      "night": "images/weather/weather-snow-night.webp"
+    },
+    "fog": {
+      "day": "images/weather/weather-fog-day.webp",
+      "night": "images/weather/weather-fog-night.webp"
+    }
+  },
+  "weatherIconPaths": {
+    "clear-day": "icons/weather/clear-day.svg",
+    "clear-night": "icons/weather/clear-night.svg",
+    "fog": "icons/weather/fog.svg",
+    "overcast": "icons/weather/overcast.svg",
+    "partly-cloudy-day": "icons/weather/partly-cloudy-day.svg",
+    "partly-cloudy-night": "icons/weather/partly-cloudy-night.svg",
+    "rain": "icons/weather/rain.svg",
+    "sleet": "icons/weather/sleet.svg",
+    "snow": "icons/weather/snow.svg",
+    "thunderstorm": "icons/weather/thunderstorm.svg",
+    "unknown": "icons/weather/unknown.svg",
+    "wind": "icons/weather/wind.svg"
+  },
+  "notes": [
+    "These are internal theme names, not a complete Visual Crossing condition-code map.",
+    "Translate provider codes in the app normalizer; use fallback for missing/unrecognized data.",
+    "Wind alone does not imply rain: retain cloud/day state. Sleet can use snow scenery with sleet icon.",
+    "Moon imagery is illustrative and does not encode the current lunar phase.",
+    "Import files with Webpack; manifest path strings alone do not cause bundling."
+  ]
+}

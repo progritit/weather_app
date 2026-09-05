@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solaris landscape backgrounds</title>
+    <style>
+      @import url("fonts/fonts.css");
+      :root {
+        color-scheme: dark;
+        --navy: #071d31;
+        --panel: #102f48;
+        --line: #34566f;
+        --ivory: #f7f3e8;
+        --muted: #b9ccda;
+        --amber: #f6b83f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--navy);
+        color: var(--ivory);
+        font:
+          15px Inter,
+          sans-serif;
+      }
+      main {
+        max-width: 1320px;
+        margin: auto;
+        padding: 36px;
+      }
+      h1,
+      h2 {
+        font-family: "Cormorant Garamond", serif;
+        font-weight: 500;
+      }
+      h1 {
+        font-size: clamp(38px, 5vw, 64px);
+        margin: 22px 0 6px;
+      }
+      h2 {
+        font-size: 34px;
+        margin: 42px 0 16px;
+      }
+      p {
+        color: var(--muted);
+        line-height: 1.65;
+        max-width: 75ch;
+      }
+      .note {
+        border-left: 3px solid var(--amber);
+        background: #0d2a42;
+        padding: 14px 18px;
+      }
+      .group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 18px;
+      }
+      figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+      figure img {
+        width: 100%;
+        display: block;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+      }
+      figcaption {
+        padding: 12px 14px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      code {
+        color: #d8edff;
+      }
+      @media (max-width: 600px) {
+        main {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img
+        src="branding/solaris-wordmark-on-dark.svg"
+        alt="Solaris Atmosphere Scanner"
+        width="380"
+      />
+      <h1>Landscape backgrounds</h1>
+      <p class="note">
+        Supplementary generic scenery: 14 urban and 14 countryside backgrounds.
+        Existing coastal scenes remain in <code>images/weather/</code>. These
+        images are illustrative, not live views of the selected city.
+      </p>
+      <div id="catalog"></div>
+    </main>
+    <script>
+      const conditions = [
+        "clear",
+        "partly-cloudy",
+        "overcast",
+        "rain",
+        "thunderstorm",
+        "snow",
+        "fog",
+      ];
+      const phases = ["day", "night"];
+      const label = (value) =>
+        value
+          .replaceAll("-", " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+      const renderGroup = (category) =>
+        `<h2>${label(category)}</h2><div class="group">${conditions
+          .flatMap((condition) =>
+            phases.map((phase) => {
+              const filename = `images/weather/${category}/weather-${category}-${condition}-${phase}.webp`;
+              return `<figure><img loading="lazy" src="${filename}" alt="Illustrative ${label(category)} ${label(condition)} ${phase} weather"><figcaption>${filename}</figcaption></figure>`;
+            }),
+          )
+          .join("")}</div>`;
+      document.querySelector("#catalog").innerHTML = ["urban", "countryside"]
+        .map(renderGroup)
+        .join("");
+    </script>
+  </body>
+</html>
