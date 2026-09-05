@@ -1,0 +1,119 @@
+:root {
+  font-family:
+    Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background-color: #eef2f7;
+  font-synthesis: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+main {
+  width: min(100%, 42rem);
+}
+
+.starter-card {
+  padding: clamp(2rem, 6vw, 4rem);
+  text-align: center;
+  background-color: #ffffff;
+  border: 1px solid #d8e0eb;
+  border-radius: 1.25rem;
+  box-shadow: 0 1.5rem 3rem rgb(23 32 51 / 12%);
+}
+
+.starter-label {
+  margin: 0 0 0.75rem;
+  color: #52647f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: #172033;
+  font-size: clamp(2rem, 7vw, 3.75rem);
+  line-height: 1.1;
+}
+
+.starter-description {
+  max-width: 34rem;
+  margin: 1.5rem auto 0;
+  color: #5e6c80;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 2rem 0 0;
+  padding: 0.6rem 1rem;
+  color: #475569;
+  background-color: #f1f5f9;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.status::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  background-color: #94a3b8;
+  border-radius: 50%;
+  content: "";
+}
+
+.status--ready {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.status--ready::before {
+  background-color: #22c55e;
+  box-shadow: 0 0 0 0.25rem rgb(34 197 94 / 15%);
+}
+
+.tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tool-list li {
+  padding: 0.45rem 0.8rem;
+  color: #334155;
+  background-color: #f8fafc;
+  border: 1px solid #d8e0eb;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+@media (max-width: 32rem) {
+  body {
+    padding: 1rem;
+  }
+
+  .starter-card {
+    padding: 2rem 1.25rem;
+  }
+}

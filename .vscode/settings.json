@@ -1,0 +1,13 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  "prettier.requireConfig": true,
+
+  "semgrep.scan.configuration": ["p/javascript"],
+  "semgrep.metrics": false
+}

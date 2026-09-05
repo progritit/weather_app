@@ -1,0 +1,43 @@
+{
+  "name": "template-vanilla-webpack-quality-starter",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "webpack serve --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "security": "semgrep scan --config p/javascript --metrics=off .",
+    "security:strict": "semgrep scan --config p/javascript --metrics=off --error .",
+    "security:deps": "npm audit",
+    "check": "npm run lint && npm run format:check && npm run build",
+    "check:all": "npm run check && npm run security:strict && npm run security:deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/progritit/template-vanilla-webpack-quality-starter.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/progritit/template-vanilla-webpack-quality-starter/issues"
+  },
+  "homepage": "https://github.com/progritit/template-vanilla-webpack-quality-starter#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "css-loader": "^7.1.4",
+    "eslint": "^10.9.0",
+    "globals": "^17.11.0",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.8",
+    "prettier": "3.9.6",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.109.2",
+    "webpack-cli": "^7.2.2",
+    "webpack-dev-server": "^6.0.0",
+    "webpack-merge": "^6.0.1"
+  }
+}
