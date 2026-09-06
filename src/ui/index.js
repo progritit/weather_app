@@ -1,89 +1,210 @@
 import mark from "../../assets/branding/solaris-mark.svg";
-import { locations, conditions, getMockWeather } from "../data/mockWeather.js";
 import { temperature } from "../utils/units.js";
+import { formatLocal, localDate, timestampLabel } from "../utils/dates.js";
+import {
+  currentAppearance,
+  conditionKey,
+  phaseFor,
+  activeAlerts,
+} from "../utils/conditions.js";
+import { escapeHtml as esc } from "../utils/html.js";
+import { MAX_SAVED } from "../storage.js";
 import { heroImage, weatherIcon } from "./assets.js";
 import { renderHourly, renderDaily, renderMetrics } from "./forecast.js";
-import { previewStates, renderStatus, renderSkeleton } from "./status.js";
+import { renderStatus, renderSkeleton } from "./status.js";
 
-// Transient demo state only. The shared state/storage layers are connected later.
-export function mountApp(root) {
-  const demo = {
-    location: "salvador",
-    unit: "C",
-    condition: "clear",
-    phase: "day",
-    status: "ready",
-    day: null,
-    saved: ["salvador", "paris"],
-    defaultLocation: "salvador",
-    alert: false,
-  };
-  let dialogReturnFocus = null;
+function renderHero(state) {
+  const { weather, currentPlace, unit, landscape } = state;
+  const current = weather.current;
+  const label = weather.location.label ?? currentPlace.label;
+  const [name, ...region] = label.split(",");
+  const today = weather.daily.find(
+    (day) =>
+      day.date ===
+      localDate(weather.meta.referenceTimeMs, weather.location.timezone),
+  );
+  const saved = state.saved.some((place) => place.id === currentPlace.id);
+  const { condition, phase } = currentAppearance(weather, Date.now());
+  return `<section class="weather-hero" aria-labelledby="location-title"><div class="hero-top"><div><p class="eyebrow">${esc(region.join(",").trim() || "CURRENT CONDITIONS")}</p><h1 id="location-title">${esc(name)}<span>.</span></h1><p class="resolved-location">${esc(label)}</p><p class="local-time" id="local-clock"></p></div><button class="favorite-button" data-action="favorite" data-focus="favorite" aria-label="${saved ? "Remove from" : "Add to"} saved locations" aria-pressed="${saved}">${saved ? "★" : "☆"}</button></div>
+    <div class="hero-reading"><div class="hero-temperature">${temperature(current?.temperature, unit)}<span>${unit}</span></div><div class="hero-condition">${weatherIcon(condition, phase)}<h2>${esc(current?.condition ?? "Conditions unavailable")}</h2><p>Feels like ${temperature(current?.feelsLike, unit)} <span>·</span> H ${temperature(today?.high, unit)} / L ${temperature(today?.low, unit)}</p></div></div>
+    <div class="hero-bottom"><span>Observed ${esc(timestampLabel(current?.timestampMs, weather.location.timezone))} · Retrieved ${esc(timestampLabel(weather.meta.fetchedAtMs, weather.location.timezone))} local <button class="inline-button" data-action="refresh" data-focus="refresh" aria-label="Refresh this location’s weather">↻</button></span><span>Illustrative atmosphere · <span id="phase-label"></span></span></div>
+    <div class="scene-controls"><label for="landscape">Scenery</label><select id="landscape" data-focus="landscape">${[
+      ["urban", "Urban"],
+      ["countryside", "Countryside"],
+      ["coastal", "Coastal"],
+    ]
+      .map(
+        ([value, text]) =>
+          `<option value="${value}" ${landscape === value ? "selected" : ""}>${text}</option>`,
+      )
+      .join("")}</select></div></section>`;
+}
+
+function renderAlertList(weather, alerts) {
+  if (!alerts.length)
+    return '<p class="drawer-intro">No current alerts were supplied for this location.</p>';
+  return `<p class="drawer-intro">${esc(weather.location.label)}</p>${alerts.map((alert) => `<article class="provider-alert" ${alert.language ? `lang="${esc(alert.language)}"` : ""}><h3>${esc(alert.headline ?? alert.event ?? "Weather alert")}</h3><p class="subtle">From ${esc(timestampLabel(alert.onset.timestampMs, weather.location.timezone))} · Until ${esc(timestampLabel(alert.ends.timestampMs, weather.location.timezone))} local</p><p class="alert-description">${esc(alert.description ?? "No description was supplied.")}</p>${alert.link ? `<a href="${esc(alert.link)}" target="_blank" rel="noopener noreferrer">Read the issuing authority’s notice ↗</a>` : ""}</article>`).join("")}`;
+}
+
+export function mountApp(root, { store, storage, search }) {
   root.innerHTML = `<header class="site-header"><a class="brand" href="#overview" aria-label="Solaris Atmosphere Scanner overview"><img src="${mark}" width="40" height="40" alt="" /><span>SOLARIS<small>ATMOSPHERE SCANNER</small></span></a>
-    <form class="search-form" role="search"><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city…" autocomplete="off" list="demo-locations" required /><datalist id="demo-locations"><option value="Salvador"></option><option value="Paris"></option></datalist><button type="submit" class="search-submit">Search</button></form>
+    <div class="search-region"><form class="search-form" role="search" novalidate><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city or postal code…" autocomplete="off" maxlength="120" required aria-describedby="search-error" /><button type="submit" class="search-submit">Search</button></form><p id="search-error" class="search-error" role="alert" hidden></p><details class="recent-searches"><summary>Recent searches</summary><div id="recent-list"></div></details></div>
     <nav class="header-actions" aria-label="Weather controls"><button class="quiet-button locate-button" data-action="locate"><span aria-hidden="true">◎</span> Use my location</button><div class="unit-switch" role="group" aria-label="Temperature units"><button data-unit="C" aria-pressed="true">°C</button><button data-unit="F" aria-pressed="false">°F</button></div><button class="saved-trigger quiet-button" data-action="saved">Saved locations <span aria-hidden="true">☰</span></button></nav></header>
-    <main id="overview" tabindex="-1"><div class="observatory-line"><span>EARTH OBSERVATORY <span class="line-divider">/</span> OVERVIEW</span><span class="mock-badge">MOCK DATA · 05 SEP 2026</span></div><div id="weather-content"></div></main>
-    <footer class="site-footer"><span>SOLARIS <span class="subtle">/ Atmosphere Scanner</span></span><p>Mock forecast · Planned provider: <a href="https://www.visualcrossing.com/weather-api/">Visual Crossing</a></p><span>© ${new Date().getFullYear()} Clebson Web Dev</span></footer>
-    <details class="preview-tools"><summary>Explore the static preview</summary><div class="preview-controls"><label>Weather<select id="preview-condition">${Object.entries(
-      conditions,
-    )
-      .map(([key, value]) => `<option value="${key}">${value}</option>`)
-      .join(
-        "",
-      )}</select></label><label>Local light<select id="preview-phase"><option value="day">Day</option><option value="night">Night</option></select></label><label>Interface state<select id="preview-status">${Object.entries(
-      previewStates,
-    )
-      .map(([key, value]) => `<option value="${key}">${value}</option>`)
-      .join(
-        "",
-      )}</select></label><label class="checkbox-label"><input type="checkbox" id="preview-alert" /> Sample weather alert</label></div><p>All readings and alerts are fictional. Search supports Salvador and Paris. Weather overrides demonstrate image themes, including scenarios outside a city’s typical climate. Saved locations reset on reload.</p></details>
-    <dialog class="saved-drawer" aria-labelledby="saved-title"></dialog><dialog class="alert-dialog" aria-labelledby="alert-title"><div class="drawer-heading"><h2 id="alert-title">Sample heavy rain alert</h2><button class="icon-button" data-action="close-alert" aria-label="Close alert">×</button></div><p class="eyebrow">FICTIONAL ALERT · PREVIEW ONLY</p><p>Example advisory for heavy rainfall and reduced visibility, valid September 5 from 12:00–18:00 local time.</p><p>Live alerts will appear here only when supplied by the weather provider, with their source, times, and full description.</p></dialog><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
+    <main id="overview" tabindex="-1"><div class="observatory-line"><span>EARTH OBSERVATORY <span class="line-divider">/</span> OVERVIEW</span><span class="data-badge">VISUAL CROSSING</span></div><p id="feedback" class="action-feedback" role="status" hidden></p><div id="weather-status"></div><div id="weather-content"></div></main>
+    <footer class="site-footer"><span>SOLARIS <span class="subtle">/ Atmosphere Scanner</span></span><p>Weather data by <a href="https://www.visualcrossing.com/weather-api/">Visual Crossing</a></p><span>© ${new Date().getFullYear()} Clebson Web Dev</span></footer>
+    <dialog class="saved-drawer" aria-labelledby="saved-title"><div class="drawer-heading"><div><p class="eyebrow">YOUR PLACES</p><h2 id="saved-title">Saved locations</h2></div><button class="icon-button" data-action="close-saved" aria-label="Close saved locations">×</button></div><p class="drawer-intro">A little closer, wherever you are.</p><div id="saved-content"></div></dialog>
+    <dialog class="alert-dialog" aria-labelledby="alert-title"><div class="drawer-heading"><h2 id="alert-title">Weather alerts</h2><button class="icon-button" data-action="close-alert" aria-label="Close alerts">×</button></div><div id="alert-content"></div></dialog><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
+
   const content = root.querySelector("#weather-content");
+  const input = root.querySelector("#location-search");
   const drawer = root.querySelector(".saved-drawer");
   const alertDialog = root.querySelector(".alert-dialog");
+  let dialogReturnFocus = null;
+  let lastWeather = null;
+  let lastError = null;
+  let lastPlaceId = null;
+  let displayedAlertSignature = "";
   const announce = (message) => {
     root.querySelector("#announcer").textContent = message;
   };
-  function render() {
-    const weather = getMockWeather(demo.location, demo.condition, demo.phase);
-    root.dataset.phase = demo.phase;
+  const feedback = (message) => {
+    const element = root.querySelector("#feedback");
+    element.textContent = message;
+    element.hidden = !message;
+  };
+
+  function updateClock() {
+    const state = store.getState();
+    if (!state.weather) return;
+    const now = Date.now();
+    if (
+      JSON.stringify(activeAlerts(state.weather, now)) !==
+      displayedAlertSignature
+    ) {
+      render(state);
+      return;
+    }
+    const clock = root.querySelector("#local-clock");
+    if (clock)
+      clock.textContent = `${formatLocal(now, state.weather.location.timezone, { weekday: "long", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })} local time`;
+    const { condition, phase } = currentAppearance(state.weather, now);
+    root.dataset.phase = phase ?? "unknown";
+    const hero = root.querySelector(".weather-hero");
+    const image = heroImage(condition, phase, state.landscape);
+    if (hero)
+      hero.style.setProperty(
+        "--hero-image",
+        image ? `url("${image}")` : "none",
+      );
+    const phaseLabel = root.querySelector("#phase-label");
+    const icon = hero?.querySelector(".hero-condition .weather-icon");
+    if (icon) icon.outerHTML = weatherIcon(condition, phase);
+    if (phaseLabel)
+      phaseLabel.textContent =
+        phase === "day"
+          ? "Daylight"
+          : phase === "night"
+            ? "After dark"
+            : "Light unavailable";
+  }
+
+  function renderDrawer(state) {
+    const priorValue = drawer.querySelector("#saved-city")?.value ?? "";
+    drawer.querySelector("#saved-content").innerHTML =
+      `<div class="saved-list">${
+        state.saved.length
+          ? state.saved
+              .map((place, index) => {
+                const summary = state.summaries[place.id];
+                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit)}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · Retrieved ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local` : "Open to load weather."}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
+              })
+              .join("")
+          : '<p class="empty-saved">No saved locations yet. Save a place using the star or search below.</p>'
+      }</div><form class="add-location-form" novalidate><label for="saved-city">Find and save a location</label><div class="add-location-controls"><input id="saved-city" name="savedCity" placeholder="City, country" maxlength="120" required data-focus="saved-city" /><button class="primary-button" ${state.saved.length >= MAX_SAVED ? "disabled" : ""}>Save</button></div></form><p class="drawer-footnote">${state.saved.length >= MAX_SAVED ? `You have saved ${MAX_SAVED} locations. Remove one to add another.` : "Places are saved on this device. Open a place to refresh its weather."}</p>`;
+    drawer.querySelector("#saved-city").value = priorValue;
+  }
+
+  function render(state) {
+    const focused = document.activeElement?.dataset.focus;
+    const selection =
+      document.activeElement === drawer.querySelector("#saved-city")
+        ? document.activeElement.selectionStart
+        : null;
+    const scrolls =
+      state.currentPlace?.id === lastPlaceId
+        ? [...content.querySelectorAll(".hourly-scroll")].map((element) => [
+            element.dataset.focus,
+            element.scrollLeft,
+          ])
+        : [];
+    const busy = state.status === "loading" || state.status === "locating";
+    root.querySelector(".search-form").setAttribute("aria-busy", String(busy));
+    root.querySelector("[data-action='locate']").disabled =
+      state.status === "locating";
     root
       .querySelectorAll("[data-unit]")
       .forEach((button) =>
-        button.setAttribute("aria-pressed", button.dataset.unit === demo.unit),
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.unit === state.unit),
+        ),
       );
-    root.querySelector("#preview-status").value = demo.status;
-    content.innerHTML = `${renderStatus(demo.status)}${
-      demo.status === "initial"
+    const error = root.querySelector("#search-error");
+    error.textContent = state.error?.field ? state.error.message : "";
+    error.hidden = !error.textContent;
+    input.setAttribute("aria-invalid", String(Boolean(state.error?.field)));
+    root.querySelector("#recent-list").innerHTML = state.recent.length
+      ? `<ul>${state.recent.map((place, index) => `<li><button class="quiet-button" data-recent="${index}" data-focus="recent-${index}">${esc(place.label)}</button></li>`).join("")}</ul><button class="quiet-button" data-action="clear-recent" data-focus="clear-recent">Clear recent searches</button>`
+      : '<p class="subtle">Successful searches will appear here.</p>';
+    root.querySelector("#weather-status").innerHTML = renderStatus(state);
+    const alerts = state.weather ? activeAlerts(state.weather, Date.now()) : [];
+    displayedAlertSignature = JSON.stringify(alerts);
+    content.innerHTML = state.weather
+      ? `${alerts.length ? `<div class="alert-banner"><span><strong>${esc(alerts[0].event ?? "Weather alert")}</strong>${alerts.length > 1 ? ` · ${alerts.length} notices` : ""}</span><button class="quiet-button" data-action="alert" data-focus="alert">View details →</button></div>` : ""}${renderHero(state)}${renderHourly(state.weather, state.unit)}<div class="forecast-layout">${renderDaily(state.weather, state.unit, state.day)}${renderMetrics(state.weather)}</div>`
+      : busy
         ? renderSkeleton()
-        : `
-      ${demo.alert ? '<div class="alert-banner"><span><strong>Sample weather alert</strong> · Heavy rain advisory</span><button class="quiet-button" data-action="alert">View details →</button></div>' : ""}
-      <section class="weather-hero" aria-labelledby="location-title" style="--hero-image: url('${heroImage(demo.condition, demo.phase, weather.location.landscape)}')"><div class="hero-top"><div><p class="eyebrow">${weather.location.region.toUpperCase()}</p><h1 id="location-title">${weather.location.name}<span>.</span></h1><p class="local-time">Saturday, September 5 · ${weather.time} local time</p></div><button class="favorite-button" data-action="favorite" aria-label="${demo.saved.includes(demo.location) ? "Remove from" : "Add to"} saved locations" aria-pressed="${demo.saved.includes(demo.location)}">${demo.saved.includes(demo.location) ? "★" : "☆"}</button></div>
-      <div class="hero-reading"><div class="hero-temperature">${temperature(weather.temperature, demo.unit)}<span>${demo.unit}</span></div><div class="hero-condition">${weatherIcon(demo.condition, demo.phase)}<h2>${conditions[demo.condition]}</h2><p>Feels like ${temperature(weather.feelsLike, demo.unit)} <span>·</span> H ${temperature(weather.daily[0].high, demo.unit)} / L ${temperature(weather.daily[0].low, demo.unit)}</p></div></div>
-      <div class="hero-bottom"><span>${demo.status === "offline" ? "Cached Sep 5 · 09:40 local" : `Sample updated ${weather.updated} local`} <button class="inline-button" data-action="refresh" aria-label="Preview refreshing weather">↻</button></span><span>Illustrative atmosphere · ${demo.phase === "day" ? "Daylight" : "After dark"}</span></div></section>
-      ${renderHourly(weather, demo.unit)}<div class="forecast-layout">${renderDaily(weather, demo.unit, demo.day)}${renderMetrics(weather, demo.status === "missing")}</div>`
-    }`;
-  }
-  function renderDrawer() {
-    drawer.innerHTML = `<div class="drawer-heading"><div><p class="eyebrow">YOUR PLACES</p><h2 id="saved-title">Saved locations</h2></div><button class="icon-button" data-action="close-saved" aria-label="Close saved locations">×</button></div><p class="drawer-intro">A little closer, wherever you are.</p><div class="saved-list">${
-      demo.saved.length
-        ? demo.saved
-            .map((id) => {
-              const weather = getMockWeather(id, demo.condition, demo.phase);
-              return `<article class="saved-card"><button class="saved-location" data-location="${id}"><span><strong>${weather.location.name}</strong><span>${weather.location.region}</span></span><span class="saved-temperature">${temperature(weather.temperature, demo.unit)}</span></button><p>${weatherIcon(demo.condition, demo.phase)} ${conditions[demo.condition]} · Sample updated ${weather.updated} local</p><div class="saved-card-actions"><button class="quiet-button" data-default="${id}" aria-pressed="${demo.defaultLocation === id}">${demo.defaultLocation === id ? "★ Default location" : "Set as default"}</button><button class="quiet-button" data-remove="${id}" aria-label="Remove ${weather.location.name}">Remove</button></div></article>`;
-            })
-            .join("")
-        : '<p class="empty-saved">No saved locations yet. Add a place below to keep it close.</p>'
-    }</div><form class="add-location-form"><label for="saved-city">Add a location</label><div class="add-location-controls"><select id="saved-city" name="savedCity" ${demo.saved.length === 2 ? "disabled" : ""}>${Object.entries(
-      locations,
-    )
-      .filter(([id]) => !demo.saved.includes(id))
-      .map(
-        ([id, location]) => `<option value="${id}">${location.name}</option>`,
+        : '<section class="loading-view empty-weather"><h2>Find your forecast</h2><p>Search for a city or postal location to see its weather.</p></section>';
+    if (drawer.open) renderDrawer(state);
+    if (alertDialog.open)
+      root.querySelector("#alert-content").innerHTML = renderAlertList(
+        state.weather,
+        alerts,
+      );
+    updateClock();
+    scrolls.forEach(([key, left]) => {
+      const element = [...content.querySelectorAll(".hourly-scroll")].find(
+        (item) => item.dataset.focus === key,
+      );
+      if (element) element.scrollLeft = left;
+    });
+    if (focused) {
+      const target = [...root.querySelectorAll("[data-focus]")].find(
+        (element) => element.dataset.focus === focused,
+      );
+      if (target) {
+        target.focus({ preventScroll: true });
+        if (selection !== null)
+          target.setSelectionRange?.(selection, selection);
+      } else if (drawer.open) drawer.querySelector(".icon-button").focus();
+      else if (
+        !document.activeElement ||
+        document.activeElement === document.body
       )
-      .join(
-        "",
-      )}</select><button class="primary-button" ${demo.saved.length === 2 ? "disabled" : ""}>Add</button></div>${demo.saved.length === 2 ? '<p class="subtle">Both preview locations are saved.</p>' : ""}</form><p class="drawer-footnote">Preview only · changes last until this page is reloaded.</p>`;
+        input.focus({ preventScroll: true });
+    }
+    if (state.weather && state.weather !== lastWeather)
+      announce(`Showing weather for ${state.currentPlace.label}.`);
+    if (state.error && state.error !== lastError && state.error.field)
+      input.focus({ preventScroll: true });
+    lastWeather = state.weather;
+    lastError = state.error;
+    lastPlaceId = state.currentPlace?.id ?? null;
+  }
+
+  function persist(patch) {
+    const state = { ...store.getState(), ...patch };
+    storage.writePreferences(state);
+    store.setState(patch);
   }
   function openDialog(dialog) {
     dialogReturnFocus = document.activeElement;
@@ -93,135 +214,154 @@ export function mountApp(root) {
   [drawer, alertDialog].forEach((dialog) => {
     dialog.addEventListener("close", () => {
       document.body.classList.remove("dialog-open");
-      dialogReturnFocus?.focus();
+      if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
+      else input.focus();
     });
     dialog.addEventListener("click", (event) => {
-      if (event.target === dialog) {
-        const rect = dialog.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        )
-          dialog.close();
-      }
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      )
+        dialog.close();
     });
   });
+
   root.addEventListener("submit", (event) => {
+    if (!event.target.matches(".search-form, .add-location-form")) return;
     event.preventDefault();
-    if (event.target.matches(".search-form")) {
-      const query = root
-        .querySelector("#location-search")
-        .value.trim()
-        .toLowerCase();
-      const match = Object.entries(locations).find(
-        ([, location]) => location.name.toLowerCase() === query,
-      );
-      if (match) {
-        demo.location = match[0];
-        demo.status = "ready";
-        demo.day = null;
-        announce(`Showing sample weather for ${match[1].name}.`);
-      } else demo.status = "invalid";
-      render();
-    } else if (event.target.matches(".add-location-form")) {
-      const id = drawer.querySelector("#saved-city").value;
-      if (locations[id] && !demo.saved.includes(id)) {
-        demo.saved.push(id);
-        demo.defaultLocation ??= id;
-        renderDrawer();
-        render();
-        drawer.querySelector(".icon-button").focus();
-        announce(`${locations[id].name} saved.`);
-      }
-    }
+    feedback("");
+    root.querySelector(".recent-searches").open = false;
+    if (event.target.matches(".add-location-form")) {
+      if (store.getState().saved.length >= MAX_SAVED) return;
+      const query = drawer.querySelector("#saved-city").value;
+      drawer.close();
+      input.value = query;
+      void search.search(query, { save: true });
+    } else void search.search(input.value);
   });
+
   root.addEventListener("change", (event) => {
-    const key = {
-      "preview-condition": "condition",
-      "preview-phase": "phase",
-      "preview-status": "status",
-    }[event.target.id];
-    if (key) demo[key] = event.target.value;
-    else if (event.target.id === "preview-alert")
-      demo.alert = event.target.checked;
-    render();
+    if (event.target.id === "landscape")
+      persist({ landscape: event.target.value });
   });
+
   root.addEventListener("click", (event) => {
     const button = event.target.closest("button");
-    if (!button) return;
+    if (!button || button.disabled) return;
+    const state = store.getState();
     const {
       action,
       unit,
       day,
-      location,
-      default: defaultId,
+      recent,
+      saved,
+      default: defaultIndex,
       remove,
     } = button.dataset;
-    if (unit) demo.unit = unit;
-    if (day !== undefined)
-      demo.day = demo.day === Number(day) ? null : Number(day);
-    if (location) {
-      demo.location = location;
-      demo.status = "ready";
-      demo.day = null;
+    if (unit) {
+      persist({ unit });
+      return;
+    }
+    if (day !== undefined) {
+      const date = state.weather?.daily[Number(day)]?.date;
+      if (date) store.setState({ day: state.day === date ? null : date });
+      return;
+    }
+    if (recent !== undefined || saved !== undefined) {
+      const place =
+        recent !== undefined
+          ? state.recent[Number(recent)]
+          : state.saved[Number(saved)];
+      if (!place) return;
       drawer.close();
-      announce(`Showing sample weather for ${locations[location].name}.`);
+      root.querySelector(".recent-searches").open = false;
+      input.value = place.label;
+      feedback("");
+      void search.search(place.query);
+      return;
     }
-    if (defaultId) {
-      demo.defaultLocation = defaultId;
-      renderDrawer();
-      drawer.querySelector(`[data-default="${defaultId}"]`).focus();
-      announce(`${locations[defaultId].name} is the preview default.`);
+    if (defaultIndex !== undefined) {
+      const place = state.saved[Number(defaultIndex)];
+      if (place) {
+        persist({ defaultId: place.id });
+        announce(`${place.label} is your default location.`);
+      }
+      return;
     }
-    if (remove) {
-      demo.saved = demo.saved.filter((id) => id !== remove);
-      if (demo.defaultLocation === remove)
-        demo.defaultLocation = demo.saved[0] ?? null;
-      renderDrawer();
+    if (remove !== undefined) {
+      const place = state.saved[Number(remove)];
+      if (!place) return;
+      persist({
+        saved: state.saved.filter((item) => item.id !== place.id),
+        defaultId: state.defaultId === place.id ? null : state.defaultId,
+      });
       drawer.querySelector(".icon-button").focus();
-      announce(`${locations[remove].name} removed.`);
+      announce(`${place.label} removed.`);
+      return;
     }
     if (action === "saved") {
-      renderDrawer();
+      renderDrawer(state);
       openDialog(drawer);
-      return;
     }
-    if (action === "close-saved") {
-      drawer.close();
-      return;
-    }
+    if (action === "close-saved") drawer.close();
     if (action === "alert") {
+      root.querySelector("#alert-content").innerHTML = renderAlertList(
+        state.weather,
+        activeAlerts(state.weather, Date.now()),
+      );
       openDialog(alertDialog);
-      return;
     }
-    if (action === "close-alert") {
-      alertDialog.close();
-      return;
+    if (action === "close-alert") alertDialog.close();
+    if (action === "locate") {
+      feedback("");
+      void search.locate();
     }
-    if (action === "locate") demo.status = "denied";
-    if (action === "refresh") demo.status = "refreshing";
-    if (action === "retry") demo.status = "ready";
-    if (action === "favorite") {
-      if (demo.saved.includes(demo.location)) {
-        demo.saved = demo.saved.filter((id) => id !== demo.location);
-        if (demo.defaultLocation === demo.location)
-          demo.defaultLocation = demo.saved[0] ?? null;
-      } else {
-        demo.saved.push(demo.location);
-        demo.defaultLocation ??= demo.location;
+    if (action === "refresh" && state.currentPlace) {
+      feedback("");
+      void search.search(state.currentPlace.query, { remember: false });
+    }
+    if (action === "retry") {
+      feedback("");
+      void search.retry();
+    }
+    if (action === "clear-recent") {
+      storage.writeRecent([]);
+      store.setState({ recent: [] });
+      root.querySelector(".recent-searches summary").focus();
+      feedback("Recent searches cleared.");
+    }
+    if (action === "favorite" && state.currentPlace) {
+      const place = state.currentPlace;
+      const exists = state.saved.some((item) => item.id === place.id);
+      if (!exists && state.saved.length >= MAX_SAVED) {
+        feedback(
+          `You can save up to ${MAX_SAVED} locations. Remove a place to add another.`,
+        );
+        return;
       }
+      persist({
+        saved: exists
+          ? state.saved.filter((item) => item.id !== place.id)
+          : [...state.saved, place],
+        defaultId:
+          exists && state.defaultId === place.id ? null : state.defaultId,
+      });
+      feedback(
+        `${place.label} ${exists ? "removed from" : "added to"} saved locations.`,
+      );
     }
-    render();
-    if (day !== undefined)
-      content.querySelector(`[data-day="${day}"]`)?.focus();
-    else if (["favorite", "refresh", "retry"].includes(action))
-      content
-        .querySelector(
-          `[data-action="${action === "retry" ? "refresh" : action}"]`,
-        )
-        ?.focus();
   });
-  render();
+
+  const unsubscribe = store.subscribe(render);
+  render(store.getState());
+  const clock = setInterval(updateClock, 60_000);
+  return () => {
+    unsubscribe();
+    clearInterval(clock);
+    search.cancel();
+  };
 }

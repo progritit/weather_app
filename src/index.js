@@ -1,19 +1,24 @@
 import "./styles.css";
-import { fetchWeather } from "./api/weather.js";
-import { normalizeWeather } from "./data/normalizeWeather.js";
+import "./ui/live.css";
+import { createStore } from "./state.js";
+import { createStorage } from "./storage.js";
+import { createWeatherSearch } from "./search.js";
 import { mountApp } from "./ui/index.js";
 
-mountApp(document.querySelector("#app"));
-
-// Step 6: inspect the app model before connecting it to state and live rendering.
-async function inspectWeather() {
-  try {
-    const response = await fetchWeather("Salvador");
-    const weather = normalizeWeather(response, { referenceTimeMs: Date.now() });
-    console.log("Solaris normalized weather:", weather);
-  } catch (error) {
-    console.warn("Solaris weather inspection failed:", error.message);
-  }
-}
-
-void inspectWeather();
+const storage = createStorage();
+const store = createStore({
+  preferences: storage.readPreferences(),
+  recent: storage.readRecent(),
+});
+const search = createWeatherSearch({
+  store,
+  storage,
+  onResult: (weather) => console.log("Solaris normalized weather:", weather),
+});
+mountApp(document.querySelector("#app"), { store, storage, search });
+const state = store.getState();
+const initialPlace =
+  state.saved.find((place) => place.id === state.defaultId) ?? state.recent[0];
+void search.search(initialPlace?.query ?? "Salvador, Brazil", {
+  remember: false,
+});

@@ -1,0 +1,214 @@
+/* Live data additions; the original Solaris layout and tokens stay in styles.css. */
+.search-region {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+.search-region .search-form {
+  max-width: none;
+}
+.search-error {
+  color: #ffd6ad;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+.search-form:has([aria-invalid="true"]) {
+  border-color: #e8bd79;
+}
+.recent-searches {
+  font-size: 0.875rem;
+  position: relative;
+  margin-top: 4px;
+}
+.recent-searches summary {
+  color: var(--muted);
+  width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.recent-searches summary::after {
+  content: "⌄";
+  margin-left: 8px;
+}
+#recent-list {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 12px;
+  background: var(--navy);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 14px 34px #05152066;
+  max-height: 360px;
+  overflow: auto;
+}
+#recent-list ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+#recent-list li button {
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--line);
+}
+#recent-list p {
+  padding: 8px;
+}
+.data-badge {
+  letter-spacing: 0.08em;
+}
+.action-feedback {
+  padding: 12px 0;
+  color: var(--amber);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.resolved-location {
+  color: #e0e7e7;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.hero-top > div {
+  min-width: 0;
+}
+.weather-hero h1,
+.weather-hero .eyebrow,
+.resolved-location,
+.saved-location strong,
+.provider-alert {
+  overflow-wrap: anywhere;
+}
+.hero-condition {
+  min-width: 0;
+}
+.hero-bottom {
+  flex-wrap: wrap;
+  padding-block: 8px;
+  line-height: 1.6;
+}
+.hero-bottom > span {
+  min-width: 0;
+}
+.scene-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  margin-top: 6px;
+}
+.scene-controls select {
+  width: auto;
+  min-width: 140px;
+  background: #102634dd;
+}
+.hourly-track {
+  min-width: var(--track-width, 1152px);
+}
+.hourly-items {
+  grid-template-columns: repeat(var(--hour-count, 24), minmax(0, 1fr));
+}
+.hour small {
+  color: #536a75;
+  font-size: 0.75rem;
+}
+.forecast-chart {
+  height: 150px;
+}
+.temperature-point {
+  fill: #b07a34;
+}
+.chart-legend {
+  flex-wrap: wrap;
+  gap: 10px 24px;
+}
+.empty-section {
+  color: #506976;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.detail-hours {
+  margin-top: 24px;
+}
+.detail-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.detail-stats dd {
+  line-height: 1.5;
+}
+.add-location-controls input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #ffffff05;
+  color: var(--ivory);
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+.saved-location > span:first-child {
+  min-width: 0;
+}
+.saved-location strong {
+  font-size: 1.65rem;
+}
+.saved-card-actions {
+  flex-wrap: wrap;
+}
+.provider-alert {
+  padding-block: 20px;
+  border-top: 1px solid var(--line);
+}
+.provider-alert p {
+  margin: 12px 0;
+  line-height: 1.7;
+}
+.provider-alert a {
+  display: inline-block;
+  padding-block: 10px;
+}
+.alert-description {
+  white-space: pre-line;
+}
+.empty-weather h2 {
+  margin-bottom: 16px;
+}
+@media (max-width: 680px) {
+  .search-region {
+    order: 3;
+    flex-basis: 100%;
+    min-width: 0;
+  }
+  .search-region .search-form {
+    margin: 0;
+  }
+  .data-badge {
+    font-size: 0.75rem;
+  }
+  .status-banner,
+  .alert-banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .hero-condition h2 {
+    font-size: 1.75rem;
+  }
+  .hero-bottom {
+    gap: 6px;
+  }
+  .day-row {
+    grid-template-columns: 42px 26px minmax(36px, 1fr) 88px 12px;
+    gap: 5px;
+  }
+  .temperature-range {
+    gap: 4px;
+  }
+  .temperature-range i {
+    min-width: 8px;
+  }
+}

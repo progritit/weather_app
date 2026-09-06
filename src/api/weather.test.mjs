@@ -110,3 +110,124 @@ test("rejects malformed payloads and invalid input before fetching", async () =>
   }
   assert.equal(calls, 1);
 });
+
+test("an already-aborted search never starts a network request", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return response({ data: {} });
+  };
+  const controller = new globalThis.AbortController();
+  controller.abort();
+  try {
+    await assert.rejects(
+      fetchWeather("Paris", {
+        endpoint: "http://worker.test/api/weather",
+        signal: controller.signal,
+      }),
+      (error) => error.code === "WEATHER_ABORTED",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(calls, 0);
+});
+
+test(
+  "cancellation after headers aborts response-body reading and is not a timeout",
+  { timeout: 1000 },
+  async () => {
+    const originalFetch = globalThis.fetch;
+    let headersReady;
+    const headers = new Promise((resolve) => {
+      headersReady = resolve;
+    });
+    const controller = new globalThis.AbortController();
+    globalThis.fetch = async (_url, { signal }) => {
+      const stream = new globalThis.ReadableStream({
+        start(body) {
+          signal.addEventListener(
+            "abort",
+            () =>
+              body.error(new globalThis.DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        },
+      });
+      headersReady();
+      return new globalThis.Response(stream);
+    };
+    try {
+      const task = fetchWeather("Paris", {
+        endpoint: "http://worker.test/api/weather",
+        signal: controller.signal,
+      });
+      await headers;
+      controller.abort();
+      await assert.rejects(task, (error) => error.code === "WEATHER_ABORTED");
+    } finally {
+      controller.abort();
+      globalThis.fetch = originalFetch;
+    }
+  },
+);
+
+test(
+  "the timeout remains active while waiting for the JSON body",
+  { timeout: 1000 },
+  async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (_url, { signal }) =>
+      new globalThis.Response(
+        new globalThis.ReadableStream({
+          start(body) {
+            signal.addEventListener(
+              "abort",
+              () =>
+                body.error(
+                  new globalThis.DOMException("Aborted", "AbortError"),
+                ),
+              { once: true },
+            );
+          },
+        }),
+      );
+    try {
+      await assert.rejects(
+        fetchWeather("Paris", {
+          endpoint: "http://worker.test/api/weather",
+          timeoutMs: 5,
+        }),
+        (error) => error.code === "WEATHER_TIMEOUT",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  },
+);
+
+test("preserves the Worker's validation code and retry delay", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new globalThis.Response(
+      JSON.stringify({
+        error: { code: "RATE_LIMITED", message: "Wait before retrying." },
+      }),
+      {
+        status: 429,
+        headers: { "Retry-After": "60", "Content-Type": "application/json" },
+      },
+    );
+  try {
+    await assert.rejects(
+      fetchWeather("Paris", { endpoint: "http://worker.test/api/weather" }),
+      (error) =>
+        error.code === "RATE_LIMITED" &&
+        error.status === 429 &&
+        error.retryAfter === 60,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

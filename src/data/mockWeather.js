@@ -19,7 +19,6 @@ export const locations = {
     sunset: "20:24",
   },
 };
-
 export const conditions = {
   clear: "Clear skies",
   "partly-cloudy": "Partly cloudy",
@@ -29,21 +28,16 @@ export const conditions = {
   snow: "Snow",
   fog: "Fog",
 };
-
 export function getMockWeather(locationId, condition, phase) {
   const location = locations[locationId];
   const wet = ["rain", "thunderstorm"].includes(condition);
-
   const temperature =
     condition === "snow"
       ? 1
       : location.base - (wet ? 3 : 0) - (phase === "night" ? 4 : 0);
-
   const start = phase === "night" ? 20 : 10;
-
   const hourly = Array.from({ length: 24 }, (_, index) => {
     const hour = (start + index) % 24;
-
     return {
       hour,
       label: index === 0 ? "Now" : `${String(hour).padStart(2, "0")}:00`,
@@ -58,7 +52,6 @@ export function getMockWeather(locationId, condition, phase) {
       phase: hour >= 6 && hour < 18 ? "day" : "night",
     };
   });
-
   const daily = [
     condition,
     "partly-cloudy",
@@ -82,7 +75,6 @@ export function getMockWeather(locationId, condition, phase) {
         ? 60
         : 10,
   }));
-
   return {
     location,
     temperature,

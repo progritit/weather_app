@@ -8,16 +8,23 @@ const icons = import.meta.webpackContext("../../assets/icons/weather", {
   regExp: /\.svg$/,
 });
 export function heroImage(condition, phase, landscape) {
-  const prefix =
-    landscape === "coastal"
-      ? "./weather/weather"
-      : `./${landscape}/weather-${landscape}`;
-
-  return heroes(`${prefix}-${condition}-${phase}.webp`);
+  if (!["day", "night"].includes(phase)) return null;
+  const scene = ["urban", "countryside", "coastal"].includes(landscape)
+    ? landscape
+    : "urban";
+  const weather = condition === "sleet" ? "snow" : condition;
+  const prefix = scene === "coastal" ? "weather" : `weather-${scene}`;
+  const filename = `${prefix}-${weather}-${phase}.webp`;
+  // Resolve by filename: supports sibling weather/urban/countryside folders and the earlier nested layout.
+  const key = heroes.keys().find((path) => path.split("/").at(-1) === filename);
+  return key ? heroes(key) : null;
 }
 export function weatherIcon(condition, phase = "day") {
   const name = ["clear", "partly-cloudy"].includes(condition)
     ? `${condition}-${phase}`
     : condition;
-  return `<img class="weather-icon" src="${icons(`./${name}.svg`)}" alt="" width="36" height="36" />`;
+  const key = icons.keys().includes(`./${name}.svg`)
+    ? `./${name}.svg`
+    : "./unknown.svg";
+  return `<img class="weather-icon" src="${icons(key)}" alt="" width="36" height="36" />`;
 }
