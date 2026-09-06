@@ -213,6 +213,17 @@ test("a fresh device cache avoids a request and still updates the active place",
   assert.equal(storage.readRecent()[0].label, "Paris, France");
 });
 
+test("an upstream cache hit is labelled cached rather than newly updated", async () => {
+  const { search, calls, store } = setup();
+  const task = search.search("Paris");
+  calls[0].resolve({
+    ...payload("Paris, France", 48.857, 2.352),
+    meta: { ...payload("Paris, France").meta, cache: "hit" },
+  });
+  await task;
+  assert.equal(store.getState().weatherSource, "upstream-cache");
+});
+
 test("an expired cache makes a network request while a bounded stale entry can recover an outage", async () => {
   const { search, storage, store, calls } = setup();
   const weather = normalizeWeather(payload("Paris, France", 48.857, 2.352));
@@ -230,7 +241,7 @@ test("an expired cache makes a network request while a bounded stale entry can r
 });
 
 test("saved-summary refresh is explicit, bypasses the browser cache, and preserves the active forecast", async () => {
-  const { search, calls, store } = setup();
+  const { search, calls, store, storage } = setup();
   const first = search.search("Salvador");
   calls[0].resolve(payload("Salvador, Brazil"));
   await first;
@@ -243,6 +254,7 @@ test("saved-summary refresh is explicit, bypasses the browser cache, and preserv
   };
   store.setState({ saved: [savedPlace] });
   const freshParis = normalizeWeather(payload("Paris, France", 48.857, 2.352));
+  storage.writeWeatherCache("Paris, France", freshParis, { cachedAtMs: NOW });
   store.getState().summaries[savedPlace.id] = {
     current: freshParis.current,
     timezone: freshParis.location.timezone,

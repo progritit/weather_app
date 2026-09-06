@@ -10,6 +10,18 @@ const TOP = 20;
 const BOTTOM = 140;
 const HEIGHT = BOTTOM - TOP;
 
+function renderChartTable(hours, unit, timezone) {
+  const rows = hours
+    .map((hour) => {
+      const stamp = timestampLabel(hour.timestampMs, timezone);
+      const offset = utcOffsetLabel(hour.timestampMs, timezone);
+      const time = stamp === "—" ? "Time unavailable" : `${stamp} ${offset}`;
+      return `<tr><th scope="row">${esc(time)}</th><td>${esc(temperature(hour.temperature, unit, { includeUnit: true }))}</td><td>${esc(measurement(hour.precipitation?.probability, "%", 0))}</td></tr>`;
+    })
+    .join("");
+  return `<details class="chart-data"><summary>View chart data as a table</summary><div class="table-scroll"><table><caption class="sr-only">Hourly temperature and precipitation probability</caption><thead><tr><th scope="col">Local time</th><th scope="col">Temperature (°${unit})</th><th scope="col">Precipitation probability (%)</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+}
+
 export function renderChart(hours, unit, timezone = null) {
   if (!hours.length) return "";
   const sourceValues = hours
@@ -69,5 +81,5 @@ export function renderChart(hours, unit, timezone = null) {
     .join("");
   return `<div class="chart-plot"><svg class="forecast-chart" viewBox="0 0 ${width} 160" preserveAspectRatio="none" role="img" aria-label="Temperature (°${unit}) and precipitation probability (%). Exact hourly values are listed above. Missing readings leave gaps.">
     <path d="M0 ${BOTTOM} H${width} M0 80 H${width} M0 ${TOP} H${width}" class="chart-grid" />${bars}<path d="${path}" class="temperature-line" />${points}</svg>${axes}</div>
-    <p class="chart-note">${sourceValues.length ? `Temperature scale: ${temperature(minC, unit, { includeUnit: true })} to ${temperature(maxC, unit, { includeUnit: true })}.` : "Temperature readings unavailable."} Precipitation bars: 0–100%. Missing readings leave gaps.</p>`;
+    <p class="chart-note">${sourceValues.length ? `Temperature scale: ${temperature(minC, unit, { includeUnit: true })} to ${temperature(maxC, unit, { includeUnit: true })}.` : "Temperature readings unavailable."} Precipitation bars: 0–100%. Missing readings leave gaps.</p>${renderChartTable(hours, unit, timezone)}`;
 }

@@ -290,6 +290,21 @@ test("missing readings render as unavailable, while true zero amounts remain zer
   assert.match(renderChart([weather.current], "C"), /height="0"/);
 });
 
+test("cached weather is labelled cached in the hero freshness line", () => {
+  const weather = normalizeWeather(fixture());
+  const html = renderCurrent(
+    {
+      ...stateFor(weather),
+      weatherSource: "stale-cache",
+      cacheTimestampMs: Date.parse("2026-09-06T00:00:00Z"),
+    },
+    weather.meta.referenceTimeMs,
+    icon,
+  );
+  assert.match(html, /· Cached Sep 5, 21:00 local/);
+  assert.doesNotMatch(html, /· Retrieved Sep 5, 21:00 local/);
+});
+
 test("sun-event fallback uses only the current local day and all detail units are explicit", () => {
   const weather = normalizeWeather(fixture());
   weather.daily[0].sunrise = { local: null, timestampMs: null };

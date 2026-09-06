@@ -170,6 +170,41 @@
 .detail-hourly-title + .detail-hours {
   margin-top: 0;
 }
+.chart-data {
+  border-top: 1px solid #18354420;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.chart-data summary {
+  color: #31647d;
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-height: 44px;
+  padding-block: 10px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.chart-data table {
+  border-collapse: collapse;
+  min-width: 420px;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+.chart-data th,
+.chart-data td {
+  border-bottom: 1px solid #18354420;
+  padding: 9px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+.chart-data th {
+  color: #315565;
+  font-weight: 600;
+}
+.chart-data td {
+  color: #183544;
+}
 .temperature-point {
   fill: #b07a34;
 }
@@ -212,6 +247,10 @@
 }
 .saved-card-actions .saved-refresh {
   color: #9bcfe3;
+}
+.saved-card-actions .saved-refresh[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.6;
 }
 .provider-alert {
   padding-block: 20px;

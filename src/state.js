@@ -10,6 +10,7 @@ export function createStore({
     status: "idle",
     pendingLabel: "",
     pendingPlaceId: null,
+    pendingMode: null,
     error: null,
     day: null,
     unit: preferences.unit === "F" ? "F" : "C",

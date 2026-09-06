@@ -43,6 +43,21 @@ test("real zero readings and Fahrenheit labels remain present", () => {
   assert.equal(windDirection(null), "—");
 });
 
+test("charts expose a keyboard-readable data-table alternative", () => {
+  const output = renderChart(
+    [hour(0, 20, 25), hour(1, null, null)],
+    "C",
+    "America/Bahia",
+  );
+  assert.match(output, /role="img" aria-label="Temperature \(°C\)/);
+  assert.match(output, /View chart data as a table/);
+  assert.match(output, /<table>/);
+  assert.match(output, /Temperature \(°C\)/);
+  assert.match(output, /Precipitation probability/);
+  assert.match(output, /20°C/);
+  assert.match(output, />—<\/td>/);
+});
+
 test("local formatting uses the requested timezone and tolerates absent timestamps", () => {
   const time = Date.parse("2026-09-06T01:00:00Z");
   assert.match(

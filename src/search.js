@@ -58,6 +58,7 @@ function presentError(error) {
     message,
     field,
     retryable: !field && code !== "LOCATION_UNAVAILABLE",
+    retryAfter: Number.isFinite(error.retryAfter) ? error.retryAfter : null,
   };
 }
 
@@ -139,6 +140,7 @@ export function createWeatherSearch({
       error: fallbackError,
       pendingLabel: "",
       pendingPlaceId: null,
+      pendingMode: null,
     };
     if (!summaryOnly) {
       Object.assign(patch, {
@@ -167,6 +169,7 @@ export function createWeatherSearch({
       locating = false,
       summaryOnly = false,
       force = false,
+      refreshing = false,
     } = {},
   ) {
     const id = ++revision;
@@ -180,6 +183,7 @@ export function createWeatherSearch({
       locating,
       summaryOnly,
       force,
+      refreshing,
     };
     let query;
     try {
@@ -188,6 +192,7 @@ export function createWeatherSearch({
           status: "locating",
           pendingLabel: "your location",
           pendingPlaceId: null,
+          pendingMode: "locating",
           error: null,
         });
         query = await locate();
@@ -212,6 +217,7 @@ export function createWeatherSearch({
           ? "your location"
           : (knownPlace?.label ?? queryLabel(query)),
         pendingPlaceId,
+        pendingMode: locating ? "locating" : refreshing ? "refresh" : "search",
         error: null,
       });
 
@@ -232,11 +238,13 @@ export function createWeatherSearch({
       const cachedAtMs = now();
       const place = placeFromWeather(weather, query);
       writeCache(query, place, weather, cachedAtMs);
+      const source =
+        weather.meta.cache === "hit" ? "upstream-cache" : "network";
       return commit(id, query, weather, {
         remember,
         save,
         summaryOnly,
-        source: "network",
+        source,
         cachedAtMs,
       });
     } catch (error) {
@@ -264,6 +272,7 @@ export function createWeatherSearch({
         status: "error",
         pendingLabel: "",
         pendingPlaceId: null,
+        pendingMode: null,
         error: presentError(error),
       });
       return null;
@@ -280,6 +289,7 @@ export function createWeatherSearch({
         remember: false,
         summaryOnly: true,
         force: true,
+        refreshing: true,
       }),
     retry: () =>
       lastAttempt ? run(lastAttempt.input, lastAttempt) : Promise.resolve(null),
@@ -291,6 +301,7 @@ export function createWeatherSearch({
         status: store.getState().weather ? "ready" : "idle",
         pendingLabel: "",
         pendingPlaceId: null,
+        pendingMode: null,
         error: null,
       });
     },

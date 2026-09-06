@@ -16,6 +16,13 @@ import { renderHourly, renderDaily, renderMetrics } from "./forecast.js";
 import { renderCurrent } from "./current.js";
 import { renderStatus, renderSkeleton } from "./status.js";
 
+const CACHED_SOURCES = new Set([
+  "cache",
+  "upstream-cache",
+  "cache-fallback",
+  "stale-cache",
+]);
+
 function renderAlertList(weather, alerts) {
   if (!alerts.length)
     return '<p class="drawer-intro">No current alerts were supplied for this location.</p>';
@@ -26,7 +33,7 @@ export function mountApp(root, { store, storage, search }) {
   root.innerHTML = `<header class="site-header"><a class="brand" href="#overview" aria-label="Solaris Atmosphere Scanner overview"><img src="${mark}" width="40" height="40" alt="" /><span>SOLARIS<small>ATMOSPHERE SCANNER</small></span></a>
     <div class="search-region"><form class="search-form" role="search" novalidate><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city or postal code…" autocomplete="off" maxlength="120" required aria-describedby="search-error" /><button type="submit" class="search-submit">Search</button></form><p id="search-error" class="search-error" role="alert" hidden></p><details class="recent-searches"><summary>Recent searches</summary><div id="recent-list"></div></details></div>
     <nav class="header-actions" aria-label="Weather controls"><button class="quiet-button locate-button" data-action="locate"><span aria-hidden="true">◎</span> Use my location</button><div class="unit-switch" role="group" aria-label="Temperature units"><button data-unit="C" aria-pressed="true">°C</button><button data-unit="F" aria-pressed="false">°F</button></div><button class="saved-trigger quiet-button" data-action="saved">Saved locations <span aria-hidden="true">☰</span></button></nav></header>
-    <main id="overview" tabindex="-1"><div class="observatory-line"><span>EARTH OBSERVATORY <span class="line-divider">/</span> OVERVIEW</span><span class="data-badge">VISUAL CROSSING</span></div><p id="feedback" class="action-feedback" role="status" hidden></p><div id="weather-status"></div><div id="weather-content"></div></main>
+    <main id="overview" tabindex="-1"><div class="observatory-line"><span>EARTH OBSERVATORY <span class="line-divider">/</span> OVERVIEW</span><span class="data-badge">VISUAL CROSSING</span></div><p id="feedback" class="action-feedback" role="status" hidden></p><div id="weather-status" aria-live="polite" aria-atomic="true"></div><div id="weather-content"></div></main>
     <footer class="site-footer"><span>SOLARIS <span class="subtle">/ Atmosphere Scanner</span></span><p>Weather data by <a href="https://www.visualcrossing.com/weather-api/">Visual Crossing</a></p><span>© ${new Date().getFullYear()} Clebson Web Dev</span></footer>
     <dialog class="saved-drawer" aria-labelledby="saved-title"><div class="drawer-heading"><div><p class="eyebrow">YOUR PLACES</p><h2 id="saved-title">Saved locations</h2></div><button class="icon-button" data-action="close-saved" aria-label="Close saved locations">×</button></div><p class="drawer-intro">A little closer, wherever you are.</p><div id="saved-content"></div></dialog>
     <dialog class="alert-dialog" aria-labelledby="alert-title"><div class="drawer-heading"><h2 id="alert-title">Weather alerts</h2><button class="icon-button" data-action="close-alert" aria-label="Close alerts">×</button></div><div id="alert-content"></div></dialog><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
@@ -120,9 +127,13 @@ export function mountApp(root, { store, storage, search }) {
                     )
                   : "—";
                 const freshness = summary
-                  ? `${summary.source === "stale-cache" ? "Cached" : "Updated"} ${summaryTime} local`
+                  ? `${CACHED_SOURCES.has(summary.source) ? "Cached" : "Updated"} ${summaryTime} local`
                   : "Open to load weather.";
-                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit, { includeUnit: true })}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · Retrieved ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local · ${esc(freshness)}` : freshness}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button saved-refresh" data-refresh-saved="${index}" data-focus="refresh-saved-${index}" ${refreshing ? "disabled" : ""}>${refreshing ? "Refreshing…" : "Refresh"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
+                const sourceTimeLabel =
+                  summary && CACHED_SOURCES.has(summary.source)
+                    ? "Source reading"
+                    : "Retrieved";
+                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit, { includeUnit: true })}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · ${sourceTimeLabel} ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local · ${esc(freshness)}` : freshness}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button saved-refresh" data-refresh-saved="${index}" data-focus="refresh-saved-${index}" aria-disabled="${refreshing}" aria-busy="${refreshing}">${refreshing ? "Refreshing…" : "Refresh"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
               })
               .join("")
           : '<p class="empty-saved">No saved locations yet. Save a place using the star or search below.</p>'
@@ -147,6 +158,7 @@ export function mountApp(root, { store, storage, search }) {
         : [];
     const busy = state.status === "loading" || state.status === "locating";
     root.querySelector(".search-form").setAttribute("aria-busy", String(busy));
+    content.setAttribute("aria-busy", String(busy));
     root.querySelector("[data-action='locate']").disabled =
       state.status === "locating";
     root
@@ -171,7 +183,11 @@ export function mountApp(root, { store, storage, search }) {
     content.innerHTML = weather
       ? `${alerts.length ? `<div class="alert-banner"><span><strong>${esc(alerts[0].event ?? "Weather alert")}</strong>${alerts.length > 1 ? ` · ${alerts.length} notices` : ""}</span><button class="quiet-button" data-action="alert" data-focus="alert">View details →</button></div>` : ""}${renderCurrent({ ...state, weather }, now, weatherIcon)}${renderHourly(weather, state.unit, weatherIcon)}<div class="forecast-layout">${renderDaily(weather, state.unit, state.day, weatherIcon)}${renderMetrics(weather)}</div>`
       : busy
-        ? renderSkeleton()
+        ? renderSkeleton(
+            state.status === "locating"
+              ? "Finding your location…"
+              : "Finding your place in the atmosphere…",
+          )
         : '<section class="loading-view empty-weather"><h2>Find your forecast</h2><p>Search for a city or postal location to see its weather.</p></section>';
     if (drawer.open) renderDrawer(state);
     if (alertDialog.open)
@@ -203,6 +219,13 @@ export function mountApp(root, { store, storage, search }) {
     }
     if (state.weather && state.weather !== lastWeather)
       announce(`Showing weather for ${state.currentPlace.label}.`);
+    if (state.error && state.error !== lastError && !state.error.field)
+      announce(
+        state.weatherSource === "stale-cache" ||
+          state.weatherSource === "cache-fallback"
+          ? "Showing cached weather while the service is unavailable."
+          : state.error.message,
+      );
     if (state.error && state.error !== lastError && state.error.field)
       input.focus({ preventScroll: true });
     lastWeather = state.weather;
@@ -260,7 +283,12 @@ export function mountApp(root, { store, storage, search }) {
 
   root.addEventListener("click", (event) => {
     const button = event.target.closest("button");
-    if (!button || button.disabled) return;
+    if (
+      !button ||
+      button.disabled ||
+      button.getAttribute("aria-disabled") === "true"
+    )
+      return;
     const state = store.getState();
     const {
       action,
@@ -290,7 +318,19 @@ export function mountApp(root, { store, storage, search }) {
       const place = state.saved[Number(refreshSaved)];
       if (!place) return;
       feedback(`Refreshing ${place.label}…`);
-      void search.refreshSaved(place);
+      void search
+        .refreshSaved(place)
+        .then((weather) => {
+          const summary = store.getState().summaries[place.id];
+          if (!weather)
+            feedback(`${place.label} could not be refreshed. Try again.`);
+          else if (CACHED_SOURCES.has(summary?.source))
+            feedback(`${place.label} is still showing cached weather.`);
+          else feedback(`${place.label} weather summary updated.`);
+        })
+        .catch(() =>
+          feedback(`${place.label} could not be refreshed. Try again.`),
+        );
       return;
     }
     if (recent !== undefined || saved !== undefined) {
@@ -339,13 +379,23 @@ export function mountApp(root, { store, storage, search }) {
       openDialog(alertDialog);
     }
     if (action === "close-alert") alertDialog.close();
+    if (action === "focus-search") {
+      if (drawer.open) drawer.close();
+      input.focus({ preventScroll: true });
+      input.select();
+      announce("Search manually for a city or postal location.");
+    }
     if (action === "locate") {
       feedback("");
       void search.locate();
     }
     if (action === "refresh" && state.currentPlace) {
       feedback("");
-      void search.search(state.currentPlace.query, { remember: false });
+      void search.search(state.currentPlace.query, {
+        remember: false,
+        force: true,
+        refreshing: true,
+      });
     }
     if (action === "retry") {
       feedback("");
