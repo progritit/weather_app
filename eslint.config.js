@@ -4,7 +4,12 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    ignores: ["dist/**", "coverage/**"],
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "worker/dist/**",
+      "worker/.wrangler/**",
+    ],
   },
 
   {
