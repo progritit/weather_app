@@ -9,6 +9,8 @@ import { escapeHtml as esc } from "../utils/html.js";
 const TOP = 20;
 const BOTTOM = 140;
 const HEIGHT = BOTTOM - TOP;
+const PLOT_LEFT = 48;
+const PLOT_RIGHT = 48;
 
 function renderChartTable(hours, unit, timezone) {
   const rows = hours
@@ -32,7 +34,9 @@ export function renderChart(hours, unit, timezone = null) {
   const min = convertTemperature(minC, unit);
   const max = convertTemperature(maxC, unit);
   const width = Math.max(320, hours.length * 80);
-  const x = (index) => ((index + 0.5) * width) / hours.length;
+  const plotWidth = width - PLOT_LEFT - PLOT_RIGHT;
+  // Keep the first/last bars away from the overlaid temperature and rain axes.
+  const x = (index) => PLOT_LEFT + ((index + 0.5) * plotWidth) / hours.length;
   const y = (value) =>
     BOTTOM - ((convertTemperature(value, unit) - min) / (max - min)) * HEIGHT;
   const title = (hour, text) =>

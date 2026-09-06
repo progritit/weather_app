@@ -102,11 +102,14 @@ test("a late success cannot overwrite a newer success, history, or inspection lo
   // Deliberately ignore AbortSignal, like a response already in flight.
   calls[0].resolve(payload("Salvador, Brazil"));
   await first;
-  assert.equal(store.getState().weather.location.label, "Paris, France");
+  assert.equal(
+    store.getState().weather.location.label,
+    "Paris, Île-de-France, France",
+  );
   assert.equal(store.getState().status, "ready");
   assert.deepEqual(
     storage.readRecent().map((place) => place.label),
-    ["Paris, France"],
+    ["Paris, Île-de-France, France"],
   );
   assert.equal(results.length, 1);
 });
@@ -147,7 +150,7 @@ test("a failed new location retains the last successful location and its reading
   );
   await second;
   assert.equal(store.getState().weather, previous);
-  assert.equal(store.getState().currentPlace.label, "Salvador, Brazil");
+  assert.equal(store.getState().currentPlace.label, "Salvador, Bahia, Brazil");
   assert.equal(store.getState().error.field, true);
   assert.equal(storage.readRecent().length, 1);
 });
@@ -173,7 +176,10 @@ test("late geolocation callbacks cannot start requests after a newer typed searc
   assert.equal(calls.length, 1);
   calls[0].resolve(payload("Paris, France", 48.857, 2.352));
   await typed;
-  assert.equal(store.getState().weather.location.label, "Paris, France");
+  assert.equal(
+    store.getState().weather.location.label,
+    "Paris, Île-de-France, France",
+  );
 });
 
 test("successful geolocation is not added to recent searches automatically", async () => {
@@ -197,7 +203,10 @@ test("successful searches can save a resolved location and retry a failed attemp
   const retry = search.retry();
   calls[1].resolve(payload("Paris, France", 48.857, 2.352));
   await retry;
-  assert.equal(storage.readPreferences().saved[0].label, "Paris, France");
+  assert.equal(
+    storage.readPreferences().saved[0].label,
+    "Paris, Île-de-France, France",
+  );
   assert.equal(store.getState().status, "ready");
 });
 
@@ -207,10 +216,13 @@ test("a fresh device cache avoids a request and still updates the active place",
   storage.writeWeatherCache("Paris", weather, { cachedAtMs: NOW });
   await search.search("Paris");
   assert.equal(calls.length, 0);
-  assert.equal(store.getState().weather.location.label, "Paris, France");
+  assert.equal(
+    store.getState().weather.location.label,
+    "Paris, Île-de-France, France",
+  );
   assert.equal(store.getState().weatherSource, "cache");
   assert.equal(store.getState().cacheStale, false);
-  assert.equal(storage.readRecent()[0].label, "Paris, France");
+  assert.equal(storage.readRecent()[0].label, "Paris, Île-de-France, France");
 });
 
 test("an upstream cache hit is labelled cached rather than newly updated", async () => {
@@ -234,7 +246,10 @@ test("an expired cache makes a network request while a bounded stale entry can r
   assert.equal(calls.length, 1);
   calls[0].reject(new Error("Network failed"));
   await task;
-  assert.equal(store.getState().weather.location.label, "Paris, France");
+  assert.equal(
+    store.getState().weather.location.label,
+    "Paris, Île-de-France, France",
+  );
   assert.equal(store.getState().weatherSource, "stale-cache");
   assert.equal(store.getState().cacheStale, true);
   assert.equal(store.getState().error.retryable, true);

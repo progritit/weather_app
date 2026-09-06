@@ -111,8 +111,18 @@ export function createWeatherSearch({
     } = {},
   ) {
     if (id !== revision || active?.signal.aborted) return null;
-    const place = placeFromWeather(weather, query);
     const previous = store.getState();
+    const resolvedPlace = placeFromWeather(weather, query);
+    const existingPlace = [
+      previous.currentPlace,
+      ...previous.recent,
+      ...previous.saved,
+    ].find((item) => item?.id === locationKey(query));
+    // Keep a previously stored identity stable when a richer provider address
+    // (for example Paris -> Paris, Île-de-France, France) is learned later.
+    const place = existingPlace
+      ? { ...existingPlace, label: resolvedPlace.label }
+      : resolvedPlace;
     const recent = remember
       ? rememberPlace(previous.recent, place)
       : previous.recent;
@@ -234,7 +244,10 @@ export function createWeatherSearch({
 
       const payload = await request(query, { signal: controller.signal });
       if (id !== revision || controller.signal.aborted) return null;
-      const weather = normalize(payload, { referenceTimeMs: now() });
+      const weather = normalize(payload, {
+        referenceTimeMs: now(),
+        locationQuery: typeof query === "string" ? query : null,
+      });
       const cachedAtMs = now();
       const place = placeFromWeather(weather, query);
       writeCache(query, place, weather, cachedAtMs);

@@ -7,6 +7,49 @@
 .search-region .search-form {
   max-width: none;
 }
+.location-suggestions {
+  position: absolute;
+  z-index: 20;
+  top: 52px;
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: min(360px, 60vh);
+  overflow-y: auto;
+  background: #102634f7;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 14px 34px #05152066;
+  backdrop-filter: blur(12px);
+}
+.location-suggestions[hidden] {
+  display: none;
+}
+.location-suggestion {
+  display: grid;
+  gap: 3px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.location-suggestion strong {
+  color: var(--ivory);
+  font-weight: 600;
+}
+.location-suggestion span {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+.location-suggestion:hover,
+.location-suggestion[aria-selected="true"] {
+  background: #9bcfe31f;
+}
 .search-error {
   color: #ffd6ad;
   font-size: 0.875rem;

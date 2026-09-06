@@ -10,6 +10,10 @@ import {
   activeAlerts,
 } from "../utils/conditions.js";
 import { escapeHtml as esc } from "../utils/html.js";
+import {
+  locationMatchText,
+  suggestLocations,
+} from "../utils/locationSearch.js";
 import { MAX_SAVED } from "../storage.js";
 import { heroImage, weatherIcon, hydrateWeatherIcons } from "./assets.js";
 import { renderHourly, renderDaily, renderMetrics } from "./forecast.js";
@@ -31,7 +35,7 @@ function renderAlertList(weather, alerts) {
 
 export function mountApp(root, { store, storage, search }) {
   root.innerHTML = `<header class="site-header"><a class="brand" href="#overview" aria-label="Solaris Atmosphere Scanner overview"><img src="${mark}" width="40" height="40" alt="" /><span>SOLARIS<small>ATMOSPHERE SCANNER</small></span></a>
-    <div class="search-region"><form class="search-form" role="search" novalidate><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city or postal code…" autocomplete="off" maxlength="120" required aria-describedby="search-error" /><button type="submit" class="search-submit">Search</button></form><p id="search-error" class="search-error" role="alert" hidden></p><details class="recent-searches"><summary>Recent searches</summary><div id="recent-list"></div></details></div>
+    <div class="search-region"><form class="search-form" role="search" novalidate><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city or postal code…" autocomplete="off" maxlength="120" required role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="location-suggestions" aria-expanded="false" aria-describedby="search-error" /><button type="submit" class="search-submit">Search</button></form><ul id="location-suggestions" class="location-suggestions" role="listbox" aria-label="Matching locations" hidden></ul><p id="search-error" class="search-error" role="alert" hidden></p><details class="recent-searches"><summary>Recent searches</summary><div id="recent-list"></div></details></div>
     <nav class="header-actions" aria-label="Weather controls"><button class="quiet-button locate-button" data-action="locate"><span aria-hidden="true">◎</span> Use my location</button><div class="unit-switch" role="group" aria-label="Temperature units"><button data-unit="C" aria-pressed="true">°C</button><button data-unit="F" aria-pressed="false">°F</button></div><button class="saved-trigger quiet-button" data-action="saved">Saved locations <span aria-hidden="true">☰</span></button></nav></header>
     <main id="overview" tabindex="-1"><div class="observatory-line"><span>EARTH OBSERVATORY <span class="line-divider">/</span> OVERVIEW</span><span class="data-badge">VISUAL CROSSING</span></div><p id="feedback" class="action-feedback" role="status" hidden></p><div id="weather-status" aria-live="polite" aria-atomic="true"></div><div id="weather-content"></div></main>
     <footer class="site-footer"><span>SOLARIS <span class="subtle">/ Atmosphere Scanner</span></span><p>Weather data by <a href="https://www.visualcrossing.com/weather-api/">Visual Crossing</a></p><span>© ${new Date().getFullYear()} Clebson Web Dev</span></footer>
@@ -40,6 +44,7 @@ export function mountApp(root, { store, storage, search }) {
 
   const content = root.querySelector("#weather-content");
   const input = root.querySelector("#location-search");
+  const suggestionList = root.querySelector("#location-suggestions");
   const drawer = root.querySelector(".saved-drawer");
   const alertDialog = root.querySelector(".alert-dialog");
   let dialogReturnFocus = null;
@@ -48,6 +53,8 @@ export function mountApp(root, { store, storage, search }) {
   let lastPlaceId = null;
   let displayedAlertSignature = "";
   let displayedWindowSignature = "";
+  let suggestions = [];
+  let activeSuggestion = -1;
   const announce = (message) => {
     root.querySelector("#announcer").textContent = message;
   };
@@ -56,6 +63,59 @@ export function mountApp(root, { store, storage, search }) {
     element.textContent = message;
     element.hidden = !message;
   };
+
+  function hideSuggestions() {
+    suggestions = [];
+    activeSuggestion = -1;
+    suggestionList.hidden = true;
+    suggestionList.innerHTML = "";
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  }
+
+  function renderSuggestions(value) {
+    suggestions = suggestLocations(value);
+    activeSuggestion = -1;
+    if (!suggestions.length) {
+      hideSuggestions();
+      return;
+    }
+    suggestionList.innerHTML = suggestions
+      .map(
+        (location, index) =>
+          `<li id="location-suggestion-${index}" class="location-suggestion" role="option" aria-selected="false" data-suggestion-index="${index}"><strong>${esc(location.city)}</strong><span>${esc(locationMatchText(location))}</span></li>`,
+      )
+      .join("");
+    suggestionList.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    input.removeAttribute("aria-activedescendant");
+  }
+
+  function setActiveSuggestion(index) {
+    if (!suggestions.length) return;
+    activeSuggestion = (index + suggestions.length) % suggestions.length;
+    suggestionList
+      .querySelectorAll("[role='option']")
+      .forEach((option, optionIndex) => {
+        const selected = optionIndex === activeSuggestion;
+        option.setAttribute("aria-selected", String(selected));
+        if (selected) option.scrollIntoView?.({ block: "nearest" });
+      });
+    input.setAttribute(
+      "aria-activedescendant",
+      `location-suggestion-${activeSuggestion}`,
+    );
+  }
+
+  function chooseSuggestion(index) {
+    const location = suggestions[index];
+    if (!location) return;
+    input.value = location.query;
+    hideSuggestions();
+    root.querySelector(".recent-searches").open = false;
+    feedback("");
+    void search.search(location.query);
+  }
 
   function updateClock() {
     const state = store.getState();
@@ -262,10 +322,44 @@ export function mountApp(root, { store, storage, search }) {
     });
   });
 
+  input.addEventListener("input", () => {
+    const error = root.querySelector("#search-error");
+    error.textContent = "";
+    error.hidden = true;
+    input.setAttribute("aria-invalid", "false");
+    renderSuggestions(input.value);
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" && suggestions.length) {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestion + 1);
+    } else if (event.key === "ArrowUp" && suggestions.length) {
+      event.preventDefault();
+      setActiveSuggestion(
+        activeSuggestion < 0 ? suggestions.length - 1 : activeSuggestion - 1,
+      );
+    } else if (event.key === "Enter" && activeSuggestion >= 0) {
+      event.preventDefault();
+      chooseSuggestion(activeSuggestion);
+    } else if (event.key === "Escape" && !suggestionList.hidden) {
+      event.preventDefault();
+      hideSuggestions();
+    } else if (event.key === "Tab") {
+      hideSuggestions();
+    }
+  });
+
+  suggestionList.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-suggestion-index]");
+    if (option) chooseSuggestion(Number(option.dataset.suggestionIndex));
+  });
+
   root.addEventListener("submit", (event) => {
     if (!event.target.matches(".search-form, .add-location-form")) return;
     event.preventDefault();
     feedback("");
+    hideSuggestions();
     root.querySelector(".recent-searches").open = false;
     if (event.target.matches(".add-location-form")) {
       if (store.getState().saved.length >= MAX_SAVED) return;
@@ -282,6 +376,7 @@ export function mountApp(root, { store, storage, search }) {
   });
 
   root.addEventListener("click", (event) => {
+    if (!event.target.closest(".search-region")) hideSuggestions();
     const button = event.target.closest("button");
     if (
       !button ||

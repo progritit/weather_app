@@ -43,6 +43,17 @@ test("real zero readings and Fahrenheit labels remain present", () => {
   assert.equal(windDirection(null), "—");
 });
 
+test("the plot reserves gutters so edge precipitation bars stay visible", () => {
+  const output = renderChart([hour(0, 20, 100), hour(1, 21, 50)], "C");
+  const bars = [...output.matchAll(/<rect x="([\d.]+)"/g)].map((match) =>
+    Number(match[1]),
+  );
+  const [firstBarX, lastBarX] = bars;
+  assert.equal(bars.length, 2);
+  assert.ok(firstBarX >= 40);
+  assert.ok(lastBarX > firstBarX);
+});
+
 test("charts expose a keyboard-readable data-table alternative", () => {
   const output = renderChart(
     [hour(0, 20, 25), hour(1, null, null)],

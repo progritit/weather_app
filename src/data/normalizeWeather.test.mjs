@@ -94,6 +94,9 @@ test("keeps the required metric readings, location and distinct timestamps", () 
   const result = normalizeWeather(fixture());
   assert.deepEqual(result.location, {
     label: "Salvador, Bahia, Brasil",
+    city: "Salvador",
+    region: "Bahia",
+    country: "Brasil",
     latitude: -12.9714,
     longitude: -38.5014,
     timezone: "America/Bahia",

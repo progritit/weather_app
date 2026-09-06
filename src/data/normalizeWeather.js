@@ -1,3 +1,5 @@
+import { formatResolvedLocation } from "../utils/location.js";
+
 const HOUR_MS = 60 * 60 * 1000;
 const MAX_DATE_MS = 8.64e15;
 
@@ -152,9 +154,14 @@ function normalizeAlert(alert) {
  * Pure Worker-envelope -> app-model transformation. No fetch, DOM, storage or clock reads.
  * All measurements remain metric; every absolute timestamp is in milliseconds.
  * Missing readings are null. Empty arrays never synthesize readings or alerts.
- * Supply referenceTimeMs explicitly to reselect a cached forecast at a later time.
+ * Supply referenceTimeMs explicitly to reselect a cached forecast at a later time;
+ * locationQuery supplies canonical display context when the provider address is
+ * incomplete.
  */
-export function normalizeWeather(payload, { referenceTimeMs } = {}) {
+export function normalizeWeather(
+  payload,
+  { referenceTimeMs, locationQuery } = {},
+) {
   if (!isRecord(payload) || !isRecord(payload.data)) {
     throw new TypeError(
       "Expected the Worker's { data, meta } weather response.",
@@ -215,9 +222,17 @@ export function normalizeWeather(payload, { referenceTimeMs } = {}) {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 7);
 
+  const resolvedLocation = formatResolvedLocation(
+    textOrNull(data.resolvedAddress) ?? textOrNull(data.address),
+    typeof locationQuery === "string" ? locationQuery : null,
+  );
+
   return {
     location: {
-      label: textOrNull(data.resolvedAddress) ?? textOrNull(data.address),
+      label: resolvedLocation.label,
+      city: resolvedLocation.city,
+      region: resolvedLocation.region,
+      country: resolvedLocation.country,
       latitude: boundedNumber(data.latitude, -90, 90),
       longitude: boundedNumber(data.longitude, -180, 180),
       timezone,
