@@ -1,6 +1,7 @@
 import mark from "../../assets/branding/solaris-mark.svg";
 import { temperature } from "../utils/units.js";
-import { formatLocal, localDate, timestampLabel } from "../utils/dates.js";
+import { formatLocal, timestampLabel } from "../utils/dates.js";
+import { selectForecast, forecastWindowKey } from "../data/selectForecast.js";
 import {
   currentAppearance,
   conditionKey,
@@ -11,34 +12,8 @@ import { escapeHtml as esc } from "../utils/html.js";
 import { MAX_SAVED } from "../storage.js";
 import { heroImage, weatherIcon } from "./assets.js";
 import { renderHourly, renderDaily, renderMetrics } from "./forecast.js";
+import { renderCurrent } from "./current.js";
 import { renderStatus, renderSkeleton } from "./status.js";
-
-function renderHero(state) {
-  const { weather, currentPlace, unit, landscape } = state;
-  const current = weather.current;
-  const label = weather.location.label ?? currentPlace.label;
-  const [name, ...region] = label.split(",");
-  const today = weather.daily.find(
-    (day) =>
-      day.date ===
-      localDate(weather.meta.referenceTimeMs, weather.location.timezone),
-  );
-  const saved = state.saved.some((place) => place.id === currentPlace.id);
-  const { condition, phase } = currentAppearance(weather, Date.now());
-  return `<section class="weather-hero" aria-labelledby="location-title"><div class="hero-top"><div><p class="eyebrow">${esc(region.join(",").trim() || "CURRENT CONDITIONS")}</p><h1 id="location-title">${esc(name)}<span>.</span></h1><p class="resolved-location">${esc(label)}</p><p class="local-time" id="local-clock"></p></div><button class="favorite-button" data-action="favorite" data-focus="favorite" aria-label="${saved ? "Remove from" : "Add to"} saved locations" aria-pressed="${saved}">${saved ? "★" : "☆"}</button></div>
-    <div class="hero-reading"><div class="hero-temperature">${temperature(current?.temperature, unit)}<span>${unit}</span></div><div class="hero-condition">${weatherIcon(condition, phase)}<h2>${esc(current?.condition ?? "Conditions unavailable")}</h2><p>Feels like ${temperature(current?.feelsLike, unit)} <span>·</span> H ${temperature(today?.high, unit)} / L ${temperature(today?.low, unit)}</p></div></div>
-    <div class="hero-bottom"><span>Observed ${esc(timestampLabel(current?.timestampMs, weather.location.timezone))} · Retrieved ${esc(timestampLabel(weather.meta.fetchedAtMs, weather.location.timezone))} local <button class="inline-button" data-action="refresh" data-focus="refresh" aria-label="Refresh this location’s weather">↻</button></span><span>Illustrative atmosphere · <span id="phase-label"></span></span></div>
-    <div class="scene-controls"><label for="landscape">Scenery</label><select id="landscape" data-focus="landscape">${[
-      ["urban", "Urban"],
-      ["countryside", "Countryside"],
-      ["coastal", "Coastal"],
-    ]
-      .map(
-        ([value, text]) =>
-          `<option value="${value}" ${landscape === value ? "selected" : ""}>${text}</option>`,
-      )
-      .join("")}</select></div></section>`;
-}
 
 function renderAlertList(weather, alerts) {
   if (!alerts.length)
@@ -64,6 +39,7 @@ export function mountApp(root, { store, storage, search }) {
   let lastError = null;
   let lastPlaceId = null;
   let displayedAlertSignature = "";
+  let displayedWindowSignature = "";
   const announce = (message) => {
     root.querySelector("#announcer").textContent = message;
   };
@@ -77,17 +53,29 @@ export function mountApp(root, { store, storage, search }) {
     const state = store.getState();
     if (!state.weather) return;
     const now = Date.now();
+    const weather = selectForecast(state.weather, now);
     if (
-      JSON.stringify(activeAlerts(state.weather, now)) !==
-      displayedAlertSignature
+      JSON.stringify(activeAlerts(weather, now)) !== displayedAlertSignature ||
+      forecastWindowKey(weather) !== displayedWindowSignature
     ) {
       render(state);
       return;
     }
     const clock = root.querySelector("#local-clock");
-    if (clock)
-      clock.textContent = `${formatLocal(now, state.weather.location.timezone, { weekday: "long", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })} local time`;
-    const { condition, phase } = currentAppearance(state.weather, now);
+    if (clock) {
+      const label = formatLocal(now, weather.location.timezone, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+        timeZoneName: "shortOffset",
+      });
+      clock.textContent =
+        label === "—" ? "Local time unavailable" : `${label} · local time`;
+    }
+    const { condition, phase } = currentAppearance(weather, now);
     root.dataset.phase = phase ?? "unknown";
     const hero = root.querySelector(".weather-hero");
     const image = heroImage(condition, phase, state.landscape);
@@ -116,7 +104,7 @@ export function mountApp(root, { store, storage, search }) {
           ? state.saved
               .map((place, index) => {
                 const summary = state.summaries[place.id];
-                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit)}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · Retrieved ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local` : "Open to load weather."}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
+                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit, { includeUnit: true })}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · Retrieved ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local` : "Open to load weather."}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
               })
               .join("")
           : '<p class="empty-saved">No saved locations yet. Save a place using the star or search below.</p>'
@@ -125,6 +113,8 @@ export function mountApp(root, { store, storage, search }) {
   }
 
   function render(state) {
+    const now = Date.now();
+    const weather = state.weather ? selectForecast(state.weather, now) : null;
     const focused = document.activeElement?.dataset.focus;
     const selection =
       document.activeElement === drawer.querySelector("#saved-city")
@@ -157,10 +147,11 @@ export function mountApp(root, { store, storage, search }) {
       ? `<ul>${state.recent.map((place, index) => `<li><button class="quiet-button" data-recent="${index}" data-focus="recent-${index}">${esc(place.label)}</button></li>`).join("")}</ul><button class="quiet-button" data-action="clear-recent" data-focus="clear-recent">Clear recent searches</button>`
       : '<p class="subtle">Successful searches will appear here.</p>';
     root.querySelector("#weather-status").innerHTML = renderStatus(state);
-    const alerts = state.weather ? activeAlerts(state.weather, Date.now()) : [];
+    const alerts = weather ? activeAlerts(weather, now) : [];
     displayedAlertSignature = JSON.stringify(alerts);
-    content.innerHTML = state.weather
-      ? `${alerts.length ? `<div class="alert-banner"><span><strong>${esc(alerts[0].event ?? "Weather alert")}</strong>${alerts.length > 1 ? ` · ${alerts.length} notices` : ""}</span><button class="quiet-button" data-action="alert" data-focus="alert">View details →</button></div>` : ""}${renderHero(state)}${renderHourly(state.weather, state.unit)}<div class="forecast-layout">${renderDaily(state.weather, state.unit, state.day)}${renderMetrics(state.weather)}</div>`
+    displayedWindowSignature = weather ? forecastWindowKey(weather) : "";
+    content.innerHTML = weather
+      ? `${alerts.length ? `<div class="alert-banner"><span><strong>${esc(alerts[0].event ?? "Weather alert")}</strong>${alerts.length > 1 ? ` · ${alerts.length} notices` : ""}</span><button class="quiet-button" data-action="alert" data-focus="alert">View details →</button></div>` : ""}${renderCurrent({ ...state, weather }, now, weatherIcon)}${renderHourly(weather, state.unit, weatherIcon)}<div class="forecast-layout">${renderDaily(weather, state.unit, state.day, weatherIcon)}${renderMetrics(weather)}</div>`
       : busy
         ? renderSkeleton()
         : '<section class="loading-view empty-weather"><h2>Find your forecast</h2><p>Search for a city or postal location to see its weather.</p></section>';
@@ -263,11 +254,16 @@ export function mountApp(root, { store, storage, search }) {
       remove,
     } = button.dataset;
     if (unit) {
-      persist({ unit });
+      if (store.setUnit(unit)) {
+        storage.writePreferences(store.getState());
+        announce(
+          `Temperatures shown in ${unit === "F" ? "Fahrenheit" : "Celsius"}. Other measurements stay metric.`,
+        );
+      }
       return;
     }
     if (day !== undefined) {
-      const date = state.weather?.daily[Number(day)]?.date;
+      const date = state.weather?.daily.find((item) => item.date === day)?.date;
       if (date) store.setState({ day: state.day === date ? null : date });
       return;
     }
@@ -359,9 +355,14 @@ export function mountApp(root, { store, storage, search }) {
   const unsubscribe = store.subscribe(render);
   render(store.getState());
   const clock = setInterval(updateClock, 60_000);
+  const resume = () => {
+    if (!document.hidden) updateClock();
+  };
+  document.addEventListener("visibilitychange", resume);
   return () => {
     unsubscribe();
     clearInterval(clock);
+    document.removeEventListener("visibilitychange", resume);
     search.cancel();
   };
 }

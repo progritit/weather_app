@@ -22,7 +22,9 @@ test("unknown chart readings leave gaps and never create fabricated zero-percent
   assert.equal(output.includes("<rect"), false);
   assert.equal(output.includes("NaN"), false);
   assert.equal(output.includes("Infinity"), false);
-  assert.match(output, /d="M40,[\d.]+\s+M200,[\d.]+"/);
+  const line = output.match(/<path d="([^"]*)" class="temperature-line"/)[1];
+  assert.equal((line.match(/M/g) ?? []).length, 2);
+  assert.equal(line.includes("L"), false);
   const empty = renderChart([hour(0, null, null)], "C");
   assert.match(empty, /Temperature readings unavailable/);
   assert.equal(empty.includes("NaN"), false);
@@ -32,7 +34,7 @@ test("unknown chart readings leave gaps and never create fabricated zero-percent
 test("real zero readings and Fahrenheit labels remain present", () => {
   const output = renderChart([hour(0, 0, 0)], "F");
   assert.match(output, /height="0"/);
-  assert.match(output, /28°–36°F/);
+  assert.match(output, /28°F to 36°F/);
   assert.equal(temperature(0, "F"), "32°");
   assert.equal(temperature(null, "F"), "—");
   assert.equal(measurement(null, "%"), "—");

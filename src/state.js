@@ -7,7 +7,7 @@ export function createStore({ preferences = {}, recent = [] } = {}) {
     pendingLabel: "",
     error: null,
     day: null,
-    unit: preferences.unit ?? "C",
+    unit: preferences.unit === "F" ? "F" : "C",
     landscape: preferences.landscape ?? "urban",
     recent,
     saved: preferences.saved ?? [],
@@ -15,11 +15,17 @@ export function createStore({ preferences = {}, recent = [] } = {}) {
     summaries: {},
   };
   const listeners = new Set();
+  const setState = (patch) => {
+    state = { ...state, ...patch };
+    listeners.forEach((listener) => listener(state));
+  };
   return {
     getState: () => state,
-    setState(patch) {
-      state = { ...state, ...patch };
-      listeners.forEach((listener) => listener(state));
+    setState,
+    setUnit(unit) {
+      if (!["C", "F"].includes(unit) || unit === state.unit) return false;
+      setState({ unit });
+      return true;
     },
     subscribe(listener) {
       listeners.add(listener);
