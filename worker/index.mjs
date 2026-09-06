@@ -254,10 +254,7 @@ export function createHandler({
       // Dates, API parameters, destination and redirects cannot be chosen by callers.
       let data;
       try {
-        const result = await fetchWithTimeout(
-          fetcher,
-          upstream.toString(),
-        );
+        const result = await fetchWithTimeout(fetcher, upstream.toString());
 
         if (!result.ok) {
           await result.body?.cancel();
