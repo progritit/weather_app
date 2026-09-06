@@ -9,7 +9,7 @@ import {
   sunLabel,
   utcOffsetLabel,
 } from "../utils/dates.js";
-import { conditionKey, phaseFor } from "../utils/conditions.js";
+import { conditionKey, phaseFor, phaseFromIcon } from "../utils/conditions.js";
 import { escapeHtml as esc } from "../utils/html.js";
 import { renderChart } from "./chart.js";
 
@@ -84,7 +84,7 @@ export function renderDaily(weather, unit, selectedDay, weatherIcon) {
               const label = day.date === today ? "Today" : dateLabel(day.date);
               const expanded = selectedDay === day.date;
               return `<div><button class="day-row ${expanded ? "selected" : ""}" data-day="${esc(day.date)}" data-focus="day-${esc(day.date)}" aria-expanded="${expanded}" aria-controls="day-detail-${index}">
-        <span class="day-name">${esc(label)}<small>${esc(dateLabel(day.date, { month: "short", day: "numeric" }))}</small></span>${weatherIcon(conditionKey(day.icon))}<span class="day-condition">${esc(day.condition ?? "Unavailable")}</span><span class="rain-value"><span class="sr-only">Precipitation probability </span>${measurement(day.precipitation.probability, "%", 0)}</span><span class="temperature-range"><span><span class="sr-only">Low </span>${temperature(day.low, unit)}</span><i aria-hidden="true"></i><strong><span class="sr-only">High </span>${temperature(day.high, unit)}</strong><span class="sr-only">°${unit}</span></span><span aria-hidden="true">${expanded ? "−" : "+"}</span>
+                <span class="day-name">${esc(label)}<small>${esc(dateLabel(day.date, { month: "short", day: "numeric" }))}</small></span>${weatherIcon(conditionKey(day.icon), phaseFromIcon(day.icon) ?? "day")}<span class="day-condition">${esc(day.condition ?? "Unavailable")}</span><span class="rain-value"><span class="sr-only">Precipitation probability </span>${measurement(day.precipitation.probability, "%", 0)}</span><span class="temperature-range"><span><span class="sr-only">Low </span>${temperature(day.low, unit)}</span><i aria-hidden="true"></i><strong><span class="sr-only">High </span>${temperature(day.high, unit)}</strong><span class="sr-only">°${unit}</span></span><span aria-hidden="true">${expanded ? "−" : "+"}</span>
       </button>${expanded ? renderDayDetail(day, index, weather, unit, weatherIcon) : `<div id="day-detail-${index}" hidden></div>`}</div>`;
             })
             .join(

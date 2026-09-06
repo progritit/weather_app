@@ -6,11 +6,12 @@ import {
   currentAppearance,
   conditionKey,
   phaseFor,
+  visualProfile,
   activeAlerts,
 } from "../utils/conditions.js";
 import { escapeHtml as esc } from "../utils/html.js";
 import { MAX_SAVED } from "../storage.js";
-import { heroImage, weatherIcon } from "./assets.js";
+import { heroImage, weatherIcon, hydrateWeatherIcons } from "./assets.js";
 import { renderHourly, renderDaily, renderMetrics } from "./forecast.js";
 import { renderCurrent } from "./current.js";
 import { renderStatus, renderSkeleton } from "./status.js";
@@ -76,7 +77,11 @@ export function mountApp(root, { store, storage, search }) {
         label === "—" ? "Local time unavailable" : `${label} · local time`;
     }
     const { condition, phase } = currentAppearance(weather, now);
-    root.dataset.phase = phase ?? "unknown";
+    const profile = visualProfile(condition, phase);
+    root.dataset.condition = profile.condition;
+    root.dataset.phase = profile.phase;
+    root.dataset.visualTheme = profile.theme;
+    root.dataset.visualAccent = profile.accent;
     const hero = root.querySelector(".weather-hero");
     const image = heroImage(condition, phase, state.landscape);
     if (hero)
@@ -87,6 +92,7 @@ export function mountApp(root, { store, storage, search }) {
     const phaseLabel = root.querySelector("#phase-label");
     const icon = hero?.querySelector(".hero-condition .weather-icon");
     if (icon) icon.outerHTML = weatherIcon(condition, phase);
+    void hydrateWeatherIcons(root);
     if (phaseLabel)
       phaseLabel.textContent =
         phase === "day"
@@ -301,6 +307,7 @@ export function mountApp(root, { store, storage, search }) {
     }
     if (action === "saved") {
       renderDrawer(state);
+      void hydrateWeatherIcons(drawer);
       openDialog(drawer);
     }
     if (action === "close-saved") drawer.close();
