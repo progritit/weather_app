@@ -3,6 +3,12 @@ import { locationKey, validateLocation } from "./utils/location.js";
 const PREFIX = "solaris-atmosphere:v1:";
 export const MAX_RECENT = 8;
 export const MAX_SAVED = 12;
+export const WEATHER_CACHE_TTL_MS = 10 * 60 * 1000;
+export const WEATHER_CACHE_STALE_MS = 24 * 60 * 60 * 1000;
+const MAX_WEATHER_CACHE = 12;
+
+const isRecord = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
 
 function cleanPlaces(value, limit) {
   if (!Array.isArray(value)) return [];
@@ -21,6 +27,39 @@ function cleanPlaces(value, limit) {
       }
     })
     .slice(0, limit);
+}
+
+function cacheKey(query) {
+  try {
+    return locationKey(validateLocation(query));
+  } catch {
+    return null;
+  }
+}
+
+function isWeatherModel(value) {
+  return (
+    isRecord(value) &&
+    isRecord(value.location) &&
+    isRecord(value.meta) &&
+    value.meta.units === "metric"
+  );
+}
+
+function cleanWeatherCache(value) {
+  if (!isRecord(value) || !isRecord(value.entries)) return {};
+  return Object.fromEntries(
+    Object.entries(value.entries)
+      .filter(
+        ([key, entry]) =>
+          typeof key === "string" &&
+          isRecord(entry) &&
+          isWeatherModel(entry.weather) &&
+          Number.isFinite(entry.cachedAtMs),
+      )
+      .sort(([, first], [, second]) => second.cachedAtMs - first.cachedAtMs)
+      .slice(0, MAX_WEATHER_CACHE),
+  );
 }
 
 // Access storage lazily: even reading localStorage can throw in restricted browsers.
@@ -64,6 +103,37 @@ export function createStorage(getStorage = () => globalThis.localStorage) {
         landscape,
         saved: cleanPlaces(saved, MAX_SAVED),
         defaultId,
+      });
+    },
+    readWeatherCache(query, { now = Date.now(), allowStale = false } = {}) {
+      const key = cacheKey(query);
+      if (!key || !Number.isFinite(now)) return null;
+      const entry = cleanWeatherCache(read("weather-cache"))[key];
+      if (!entry) return null;
+      const ageMs = Math.max(0, now - entry.cachedAtMs);
+      if (ageMs > WEATHER_CACHE_STALE_MS) return null;
+      if (!allowStale && ageMs > WEATHER_CACHE_TTL_MS) return null;
+      return {
+        weather: entry.weather,
+        cachedAtMs: entry.cachedAtMs,
+        ageMs,
+        stale: ageMs > WEATHER_CACHE_TTL_MS,
+      };
+    },
+    writeWeatherCache(query, weather, { cachedAtMs = Date.now() } = {}) {
+      const key = cacheKey(query);
+      if (!key || !isWeatherModel(weather) || !Number.isFinite(cachedAtMs))
+        return;
+      const entries = cleanWeatherCache(read("weather-cache"));
+      entries[key] = { weather, cachedAtMs };
+      write("weather-cache", {
+        entries: Object.fromEntries(
+          Object.entries(entries)
+            .sort(
+              ([, first], [, second]) => second.cachedAtMs - first.cachedAtMs,
+            )
+            .slice(0, MAX_WEATHER_CACHE),
+        ),
       });
     },
   };

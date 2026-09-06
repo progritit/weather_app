@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createStore } from "./state.js";
-import { createStorage } from "./storage.js";
+import { createStorage, WEATHER_CACHE_TTL_MS } from "./storage.js";
 import { createWeatherSearch } from "./search.js";
+import { normalizeWeather } from "./data/normalizeWeather.js";
 
 const NOW = Date.parse("2026-09-06T12:00:00Z");
 function payload(label, latitude = -12.971, longitude = -38.501) {
@@ -198,4 +199,63 @@ test("successful searches can save a resolved location and retry a failed attemp
   await retry;
   assert.equal(storage.readPreferences().saved[0].label, "Paris, France");
   assert.equal(store.getState().status, "ready");
+});
+
+test("a fresh device cache avoids a request and still updates the active place", async () => {
+  const { search, storage, store, calls } = setup();
+  const weather = normalizeWeather(payload("Paris, France", 48.857, 2.352));
+  storage.writeWeatherCache("Paris", weather, { cachedAtMs: NOW });
+  await search.search("Paris");
+  assert.equal(calls.length, 0);
+  assert.equal(store.getState().weather.location.label, "Paris, France");
+  assert.equal(store.getState().weatherSource, "cache");
+  assert.equal(store.getState().cacheStale, false);
+  assert.equal(storage.readRecent()[0].label, "Paris, France");
+});
+
+test("an expired cache makes a network request while a bounded stale entry can recover an outage", async () => {
+  const { search, storage, store, calls } = setup();
+  const weather = normalizeWeather(payload("Paris, France", 48.857, 2.352));
+  storage.writeWeatherCache("Paris", weather, {
+    cachedAtMs: NOW - WEATHER_CACHE_TTL_MS - 1,
+  });
+  const task = search.search("Paris");
+  assert.equal(calls.length, 1);
+  calls[0].reject(new Error("Network failed"));
+  await task;
+  assert.equal(store.getState().weather.location.label, "Paris, France");
+  assert.equal(store.getState().weatherSource, "stale-cache");
+  assert.equal(store.getState().cacheStale, true);
+  assert.equal(store.getState().error.retryable, true);
+});
+
+test("saved-summary refresh is explicit, bypasses the browser cache, and preserves the active forecast", async () => {
+  const { search, calls, store } = setup();
+  const first = search.search("Salvador");
+  calls[0].resolve(payload("Salvador, Brazil"));
+  await first;
+  const activeWeather = store.getState().weather;
+  const activePlace = store.getState().currentPlace;
+  const savedPlace = {
+    id: "place:paris, france",
+    query: "Paris, France",
+    label: "Paris, France",
+  };
+  store.setState({ saved: [savedPlace] });
+  const freshParis = normalizeWeather(payload("Paris, France", 48.857, 2.352));
+  store.getState().summaries[savedPlace.id] = {
+    current: freshParis.current,
+    timezone: freshParis.location.timezone,
+    fetchedAtMs: freshParis.meta.fetchedAtMs,
+  };
+  const refresh = search.refreshSaved(savedPlace);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].query, "Paris, France");
+  calls[1].resolve(payload("Paris, France", 48.857, 2.352));
+  await refresh;
+  const state = store.getState();
+  assert.equal(state.weather, activeWeather);
+  assert.equal(state.currentPlace, activePlace);
+  assert.equal(state.status, "ready");
+  assert.equal(state.summaries[savedPlace.id].source, "network");
 });

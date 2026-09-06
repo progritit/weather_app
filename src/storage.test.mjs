@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createStorage, rememberPlace, MAX_RECENT } from "./storage.js";
+import {
+  createStorage,
+  rememberPlace,
+  MAX_RECENT,
+  WEATHER_CACHE_TTL_MS,
+  WEATHER_CACHE_STALE_MS,
+} from "./storage.js";
 
 test("recent locations are deduplicated, ordered and capped", () => {
   let recent = [];
@@ -78,4 +84,69 @@ test("malformed entries and unknown defaults are dropped on load", () => {
   assert.equal(value.landscape, "urban");
   assert.equal(value.defaultId, null);
   assert.equal(value.saved.length, 1);
+});
+
+test("weather cache expires briefly, can serve bounded stale data, and rounds coordinates", () => {
+  const values = new Map();
+  const storage = createStorage(() => ({
+    getItem: (key) => values.get(key),
+    setItem: (key, value) => values.set(key, value),
+  }));
+  const weather = {
+    location: { label: "Salvador, Brazil", timezone: "America/Bahia" },
+    meta: { units: "metric" },
+    current: { temperature: 25 },
+  };
+  const cachedAtMs = 1_000_000;
+  storage.writeWeatherCache(
+    { latitude: -12.97144, longitude: -38.50144 },
+    weather,
+    { cachedAtMs },
+  );
+  const fresh = storage.readWeatherCache(
+    { latitude: -12.971, longitude: -38.501 },
+    { now: cachedAtMs + WEATHER_CACHE_TTL_MS - 1 },
+  );
+  assert.deepEqual(fresh.weather, weather);
+  assert.equal(fresh.stale, false);
+  assert.equal(
+    storage.readWeatherCache(
+      { latitude: -12.971, longitude: -38.501 },
+      { now: cachedAtMs + WEATHER_CACHE_TTL_MS + 1 },
+    ),
+    null,
+  );
+  const stale = storage.readWeatherCache(
+    { latitude: -12.971, longitude: -38.501 },
+    { now: cachedAtMs + WEATHER_CACHE_TTL_MS + 1, allowStale: true },
+  );
+  assert.deepEqual(stale.weather, weather);
+  assert.equal(stale.stale, true);
+  assert.equal(
+    storage.readWeatherCache(
+      { latitude: -12.971, longitude: -38.501 },
+      { now: cachedAtMs + WEATHER_CACHE_STALE_MS + 1, allowStale: true },
+    ),
+    null,
+  );
+});
+
+test("malformed weather cache entries are ignored without breaking preferences", () => {
+  const storage = createStorage(() => ({
+    getItem: () =>
+      JSON.stringify({
+        entries: {
+          "place:paris": {
+            cachedAtMs: 100,
+            weather: { meta: { units: "imperial" } },
+          },
+          "place:valid": {
+            cachedAtMs: "100",
+            weather: { meta: { units: "metric" } },
+          },
+        },
+      }),
+  }));
+  assert.equal(storage.readWeatherCache("Paris"), null);
+  assert.deepEqual(storage.readPreferences().saved, []);
 });

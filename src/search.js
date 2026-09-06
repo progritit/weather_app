@@ -75,21 +75,119 @@ export function createWeatherSearch({
   let active = null;
   let lastAttempt = null;
 
+  function readCache(query, allowStale = false) {
+    if (typeof storage.readWeatherCache !== "function") return null;
+    try {
+      return storage.readWeatherCache(query, { now: now(), allowStale });
+    } catch {
+      return null;
+    }
+  }
+
+  function writeCache(query, place, weather, cachedAtMs) {
+    if (typeof storage.writeWeatherCache !== "function") return;
+    const queries = new Set([query, place.query]);
+    queries.forEach((item) => {
+      try {
+        storage.writeWeatherCache(item, weather, { cachedAtMs });
+      } catch {
+        /* A cache write must never turn a successful weather response into an error. */
+      }
+    });
+  }
+
+  function commit(
+    id,
+    query,
+    weather,
+    {
+      remember = true,
+      save = false,
+      summaryOnly = false,
+      source = "network",
+      cachedAtMs = null,
+      fallbackError = null,
+    } = {},
+  ) {
+    if (id !== revision || active?.signal.aborted) return null;
+    const place = placeFromWeather(weather, query);
+    const previous = store.getState();
+    const recent = remember
+      ? rememberPlace(previous.recent, place)
+      : previous.recent;
+    const saved =
+      save &&
+      !previous.saved.some((item) => item.id === place.id) &&
+      previous.saved.length < MAX_SAVED
+        ? [...previous.saved, place]
+        : previous.saved;
+    const summary = {
+      current: weather.current,
+      timezone: weather.location.timezone,
+      fetchedAtMs: weather.meta.fetchedAtMs,
+      cachedAtMs,
+      source,
+    };
+    const summaries = { ...previous.summaries, [place.id]: summary };
+    // Keep the in-memory summary map bounded even if many saved searches occur.
+    const boundedSummaries = Object.fromEntries(
+      Object.entries(summaries).slice(-20),
+    );
+    const patch = {
+      summaries: boundedSummaries,
+      status: "ready",
+      error: fallbackError,
+      pendingLabel: "",
+      pendingPlaceId: null,
+    };
+    if (!summaryOnly) {
+      Object.assign(patch, {
+        weather,
+        currentPlace: place,
+        recent,
+        saved,
+        day: null,
+        weatherSource: source,
+        cacheTimestampMs: cachedAtMs,
+        cacheStale: source === "stale-cache",
+      });
+    }
+    onResult(weather, { source });
+    if (remember) storage.writeRecent(recent);
+    if (save) storage.writePreferences({ ...previous, saved });
+    store.setState(patch);
+    return weather;
+  }
+
   async function run(
     input,
-    { remember = true, save = false, locating = false } = {},
+    {
+      remember = true,
+      save = false,
+      locating = false,
+      summaryOnly = false,
+      force = false,
+    } = {},
   ) {
     const id = ++revision;
     active?.abort();
     const controller = new AbortController();
     active = controller;
-    lastAttempt = { input, remember, save, locating };
+    lastAttempt = {
+      input,
+      remember,
+      save,
+      locating,
+      summaryOnly,
+      force,
+    };
+    let query;
     try {
-      let query;
       if (locating) {
         store.setState({
           status: "locating",
           pendingLabel: "your location",
+          pendingPlaceId: null,
           error: null,
         });
         query = await locate();
@@ -107,53 +205,40 @@ export function createWeatherSearch({
         ...state.recent,
         ...state.saved,
       ].find((place) => place?.id === locationKey(query));
+      const pendingPlaceId = knownPlace?.id ?? locationKey(query);
       store.setState({
         status: "loading",
         pendingLabel: locating
           ? "your location"
           : (knownPlace?.label ?? queryLabel(query)),
+        pendingPlaceId,
         error: null,
       });
+
+      const fresh = !force ? readCache(query) : null;
+      if (fresh) {
+        return commit(id, query, fresh.weather, {
+          remember,
+          save,
+          summaryOnly,
+          source: "cache",
+          cachedAtMs: fresh.cachedAtMs,
+        });
+      }
+
       const payload = await request(query, { signal: controller.signal });
       if (id !== revision || controller.signal.aborted) return null;
       const weather = normalize(payload, { referenceTimeMs: now() });
+      const cachedAtMs = now();
       const place = placeFromWeather(weather, query);
-      const previous = store.getState();
-      const recent = remember
-        ? rememberPlace(previous.recent, place)
-        : previous.recent;
-      const saved =
-        save &&
-        !previous.saved.some((item) => item.id === place.id) &&
-        previous.saved.length < MAX_SAVED
-          ? [...previous.saved, place]
-          : previous.saved;
-      const summaries = Object.fromEntries(
-        Object.entries({
-          ...previous.summaries,
-          [place.id]: {
-            current: weather.current,
-            timezone: weather.location.timezone,
-            fetchedAtMs: weather.meta.fetchedAtMs,
-          },
-        }).slice(-20),
-      );
-      // Step 7 inspection happens immediately before rendering via the state update.
-      onResult(weather);
-      if (remember) storage.writeRecent(recent);
-      if (save) storage.writePreferences({ ...previous, saved });
-      store.setState({
-        weather,
-        currentPlace: place,
-        recent,
-        saved,
-        summaries,
-        status: "ready",
-        error: null,
-        pendingLabel: "",
-        day: null,
+      writeCache(query, place, weather, cachedAtMs);
+      return commit(id, query, weather, {
+        remember,
+        save,
+        summaryOnly,
+        source: "network",
+        cachedAtMs,
       });
-      return weather;
     } catch (error) {
       if (
         id !== revision ||
@@ -161,9 +246,24 @@ export function createWeatherSearch({
         error.code === "WEATHER_ABORTED"
       )
         return null;
+
+      // A bounded stale cache keeps the app useful during a brief outage while
+      // the error banner and retry action make its age explicit.
+      const stale = query ? readCache(query, true) : null;
+      if (stale) {
+        return commit(id, query, stale.weather, {
+          remember,
+          save,
+          summaryOnly,
+          source: stale.stale ? "stale-cache" : "cache-fallback",
+          cachedAtMs: stale.cachedAtMs,
+          fallbackError: presentError(error),
+        });
+      }
       store.setState({
         status: "error",
         pendingLabel: "",
+        pendingPlaceId: null,
         error: presentError(error),
       });
       return null;
@@ -175,6 +275,12 @@ export function createWeatherSearch({
   return {
     search: run,
     locate: () => run(null, { locating: true, remember: false }),
+    refreshSaved: (place) =>
+      run(place?.query ?? place, {
+        remember: false,
+        summaryOnly: true,
+        force: true,
+      }),
     retry: () =>
       lastAttempt ? run(lastAttempt.input, lastAttempt) : Promise.resolve(null),
     cancel() {
@@ -184,6 +290,7 @@ export function createWeatherSearch({
       store.setState({
         status: store.getState().weather ? "ready" : "idle",
         pendingLabel: "",
+        pendingPlaceId: null,
         error: null,
       });
     },

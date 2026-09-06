@@ -210,6 +210,9 @@
 .saved-card-actions {
   flex-wrap: wrap;
 }
+.saved-card-actions .saved-refresh {
+  color: #9bcfe3;
+}
 .provider-alert {
   padding-block: 20px;
   border-top: 1px solid var(--line);

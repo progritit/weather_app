@@ -110,7 +110,19 @@ export function mountApp(root, { store, storage, search }) {
           ? state.saved
               .map((place, index) => {
                 const summary = state.summaries[place.id];
-                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit, { includeUnit: true })}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · Retrieved ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local` : "Open to load weather."}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
+                const refreshing =
+                  state.status === "loading" &&
+                  state.pendingPlaceId === place.id;
+                const summaryTime = summary
+                  ? timestampLabel(
+                      summary.cachedAtMs ?? summary.fetchedAtMs,
+                      summary.timezone,
+                    )
+                  : "—";
+                const freshness = summary
+                  ? `${summary.source === "stale-cache" ? "Cached" : "Updated"} ${summaryTime} local`
+                  : "Open to load weather.";
+                return `<article class="saved-card"><button class="saved-location" data-saved="${index}" data-focus="saved-${index}"><span><strong>${esc(place.label)}</strong></span><span class="saved-temperature">${temperature(summary?.current?.temperature, state.unit, { includeUnit: true })}</span></button><p>${summary ? `${weatherIcon(conditionKey(summary.current?.icon), phaseFor(summary.current))} ${esc(summary.current?.condition ?? "Conditions unavailable")} · Observed ${esc(timestampLabel(summary.current?.timestampMs, summary.timezone))} · Retrieved ${esc(timestampLabel(summary.fetchedAtMs, summary.timezone))} local · ${esc(freshness)}` : freshness}</p><div class="saved-card-actions"><button class="quiet-button" data-default="${index}" data-focus="default-${index}" aria-pressed="${state.defaultId === place.id}">${state.defaultId === place.id ? "★ Default location" : "Set as default"}</button><button class="quiet-button saved-refresh" data-refresh-saved="${index}" data-focus="refresh-saved-${index}" ${refreshing ? "disabled" : ""}>${refreshing ? "Refreshing…" : "Refresh"}</button><button class="quiet-button" data-remove="${index}" data-focus="remove-${index}" aria-label="Remove ${esc(place.label)}">Remove</button></div></article>`;
               })
               .join("")
           : '<p class="empty-saved">No saved locations yet. Save a place using the star or search below.</p>'
@@ -256,6 +268,7 @@ export function mountApp(root, { store, storage, search }) {
       day,
       recent,
       saved,
+      refreshSaved,
       default: defaultIndex,
       remove,
     } = button.dataset;
@@ -271,6 +284,13 @@ export function mountApp(root, { store, storage, search }) {
     if (day !== undefined) {
       const date = state.weather?.daily.find((item) => item.date === day)?.date;
       if (date) store.setState({ day: state.day === date ? null : date });
+      return;
+    }
+    if (refreshSaved !== undefined) {
+      const place = state.saved[Number(refreshSaved)];
+      if (!place) return;
+      feedback(`Refreshing ${place.label}…`);
+      void search.refreshSaved(place);
       return;
     }
     if (recent !== undefined || saved !== undefined) {

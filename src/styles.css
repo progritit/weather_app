@@ -760,6 +760,10 @@ select {
   margin-bottom: 18px;
   font-size: 0.875rem;
 }
+.status-banner.cached {
+  background: #24414d;
+  border-color: #89b9c980;
+}
 .status-banner p {
   color: #d6e2e6;
   line-height: 1.6;

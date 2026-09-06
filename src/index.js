@@ -6,9 +6,30 @@ import { createWeatherSearch } from "./search.js";
 import { mountApp } from "./ui/index.js";
 
 const storage = createStorage();
+const preferences = storage.readPreferences();
+const summaries = Object.fromEntries(
+  preferences.saved.flatMap((place) => {
+    const cached = storage.readWeatherCache(place.query, { allowStale: true });
+    if (!cached) return [];
+    const { weather } = cached;
+    return [
+      [
+        place.id,
+        {
+          current: weather.current,
+          timezone: weather.location.timezone,
+          fetchedAtMs: weather.meta.fetchedAtMs,
+          cachedAtMs: cached.cachedAtMs,
+          source: cached.stale ? "stale-cache" : "cache",
+        },
+      ],
+    ];
+  }),
+);
 const store = createStore({
-  preferences: storage.readPreferences(),
+  preferences,
   recent: storage.readRecent(),
+  summaries,
 });
 const search = createWeatherSearch({
   store,
