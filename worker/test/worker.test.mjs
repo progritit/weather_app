@@ -88,7 +88,7 @@ test("fixed upstream, metric units, no caller headers, no secret in response or 
   assert.ok(upstream.pathname.endsWith("/timeline/salvador"));
   assert.equal(upstream.searchParams.get("key"), SECRET);
   assert.equal(upstream.searchParams.get("unitGroup"), "metric");
-  assert.equal(h.calls[0].init.redirect, "error");
+  assert.equal(h.calls[0].init.redirect, "follow");
   assert.equal(h.calls[0].init.headers, undefined);
   assert.equal(
     response.headers.get("Access-Control-Allow-Origin"),

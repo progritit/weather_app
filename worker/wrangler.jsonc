@@ -8,7 +8,7 @@
   "observability": { "enabled": false },
   "vars": {
     "WEATHER_ENABLED": "false",
-    "ALLOWED_ORIGINS": "http://localhost:8080,http://127.0.0.1:8080",
+    "ALLOWED_ORIGINS": "http://localhost:8080,http://127.0.0.1:8080,https://progritit.github.io",
   },
   "ratelimits": [
     {
