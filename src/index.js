@@ -40,6 +40,6 @@ mountApp(document.querySelector("#app"), { store, storage, search });
 const state = store.getState();
 const initialPlace =
   state.saved.find((place) => place.id === state.defaultId) ?? state.recent[0];
-void search.search(initialPlace?.query ?? "Salvador, Brazil", {
+void search.search(initialPlace?.query ?? "Paris, Île-de-France, France", {
   remember: false,
 });
