@@ -158,14 +158,21 @@ h3 {
   transform: none;
 }
 .site-header {
-  display: flex;
+  display: grid;
+  grid-template-areas: "brand search actions";
+  grid-template-columns: minmax(max-content, 1fr) minmax(18rem, 40rem) minmax(
+      max-content,
+      1fr
+    );
   align-items: center;
-  gap: 32px;
-  padding: 24px max(24px, calc((100vw - 1320px) / 2));
+  gap: clamp(20px, 2.5vw, 48px);
+  padding: 28px clamp(24px, 3.2vw, 64px);
   border-bottom: 1px solid var(--line);
   background: var(--navy);
 }
 .brand {
+  grid-area: brand;
+  justify-self: start;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -215,9 +222,20 @@ h3 {
   padding: 0 6px;
 }
 .header-actions {
+  grid-area: actions;
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 14px;
+}
+.header-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.control-short-label {
+  display: none;
 }
 .quiet-button {
   background: transparent;
@@ -227,10 +245,9 @@ h3 {
 .locate-button {
   white-space: nowrap;
 }
-.locate-button span {
+.locate-button .control-icon {
   color: var(--amber);
   font-size: 1.3rem;
-  margin-right: 5px;
 }
 .unit-switch {
   display: flex;
@@ -251,8 +268,7 @@ h3 {
 .saved-trigger {
   white-space: nowrap;
 }
-.saved-trigger span {
-  margin-left: 8px;
+.saved-trigger .control-icon {
   color: var(--amber);
 }
 main,
@@ -955,15 +971,12 @@ dialog::backdrop {
 }
 @media (max-width: 1200px) {
   .site-header {
-    flex-wrap: wrap;
-    gap: 18px;
+    grid-template-areas:
+      "brand search"
+      "actions actions";
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 16px 28px;
     padding: 20px 32px;
-  }
-  .header-actions {
-    margin-left: auto;
-  }
-  .search-form {
-    max-width: 420px;
   }
   .forecast-layout {
     grid-template-columns: 1fr;
@@ -977,6 +990,30 @@ dialog::backdrop {
   .sun-track {
     max-width: 450px;
     margin-inline: auto;
+  }
+}
+@media (max-width: 760px) {
+  .site-header {
+    grid-template-areas: "brand" "search" "actions";
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+  }
+  .header-actions {
+    justify-self: stretch;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .header-actions > button {
+    padding-inline: 4px;
+  }
+}
+@media (max-width: 480px) {
+  .header-actions .control-label {
+    display: none;
+  }
+  .header-actions .control-short-label {
+    display: inline;
   }
 }
 @media (max-width: 680px) {
@@ -999,26 +1036,6 @@ dialog::backdrop {
   .brand img {
     width: 34px;
     height: 34px;
-  }
-  .search-form {
-    order: 3;
-    max-width: none;
-    flex-basis: 100%;
-  }
-  .header-actions {
-    display: contents;
-  }
-  .unit-switch {
-    margin-left: auto;
-  }
-  .locate-button {
-    order: 4;
-    padding-inline: 0;
-  }
-  .saved-trigger {
-    order: 4;
-    margin-left: auto;
-    padding-inline: 0;
   }
   .observatory-line {
     flex-wrap: wrap;

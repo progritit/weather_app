@@ -19,6 +19,7 @@ import { heroImage, weatherIcon, hydrateWeatherIcons } from "./assets.js";
 import { renderHourly, renderDaily, renderMetrics } from "./forecast.js";
 import { renderCurrent } from "./current.js";
 import { renderStatus, renderSkeleton } from "./status.js";
+import { renderFooter } from "./footer.js";
 
 const CACHED_SOURCES = new Set([
   "cache",
@@ -35,10 +36,17 @@ function renderAlertList(weather, alerts) {
 
 export function mountApp(root, { store, storage, search }) {
   root.innerHTML = `<header class="site-header"><a class="brand" href="#overview" aria-label="Solaris Atmosphere Scanner overview"><img src="${mark}" width="40" height="40" alt="" /><span>SOLARIS<small>ATMOSPHERE SCANNER</small></span></a>
-    <div class="search-region"><form class="search-form" role="search" novalidate><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city or postal code…" autocomplete="off" maxlength="120" required role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="location-suggestions" aria-expanded="false" aria-describedby="search-error" /><button type="submit" class="search-submit">Search</button></form><ul id="location-suggestions" class="location-suggestions" role="listbox" aria-label="Matching locations" hidden></ul><p id="search-error" class="search-error" role="alert" hidden></p><details class="recent-searches"><summary>Recent searches</summary><div id="recent-list"></div></details></div>
-    <nav class="header-actions" aria-label="Weather controls"><button class="quiet-button locate-button" data-action="locate"><span aria-hidden="true">◎</span> Use my location</button><div class="unit-switch" role="group" aria-label="Temperature units"><button data-unit="C" aria-pressed="true">°C</button><button data-unit="F" aria-pressed="false">°F</button></div><button class="saved-trigger quiet-button" data-action="saved">Saved locations <span aria-hidden="true">☰</span></button></nav></header>
+    <div class="search-region">
+      <div class="search-controls">
+        <form class="search-form" role="search" novalidate><label class="sr-only" for="location-search">Search location</label><span aria-hidden="true">⌕</span><input id="location-search" name="location" placeholder="Search a city or postal code…" autocomplete="off" maxlength="120" required role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="location-suggestions" aria-expanded="false" aria-describedby="search-error" /><button type="submit" class="search-submit">Search</button></form>
+        <details class="recent-searches"><summary aria-label="Recent searches" title="Recent searches"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4v5h5"/><path d="M3.6 9a9 9 0 1 1-.1 6"/><path d="M12 7v5l3 2"/></svg></summary><div id="recent-list"></div></details>
+        <ul id="location-suggestions" class="location-suggestions" role="listbox" aria-label="Matching locations" hidden></ul>
+      </div>
+      <p id="search-error" class="search-error" role="alert" hidden></p>
+    </div>
+    <nav class="header-actions" aria-label="Weather controls"><button class="quiet-button locate-button" data-action="locate" aria-label="Use my location"><span class="control-icon" aria-hidden="true">◎</span><span class="control-label">Use my location</span><span class="control-short-label" aria-hidden="true">Location</span></button><div class="unit-switch" role="group" aria-label="Temperature units"><button data-unit="C" aria-pressed="true">°C</button><button data-unit="F" aria-pressed="false">°F</button></div><button class="saved-trigger quiet-button" data-action="saved" aria-label="Saved locations"><span class="control-label">Saved locations</span><span class="control-short-label" aria-hidden="true">Saved</span><span class="control-icon" aria-hidden="true">☰</span></button></nav></header>
     <main id="overview" tabindex="-1"><div class="observatory-line"><span>EARTH OBSERVATORY <span class="line-divider">/</span> OVERVIEW</span><span class="data-badge">VISUAL CROSSING</span></div><p id="feedback" class="action-feedback" role="status" hidden></p><div id="weather-status" aria-live="polite" aria-atomic="true"></div><div id="weather-content"></div></main>
-    <footer class="site-footer"><span>SOLARIS <span class="subtle">/ Atmosphere Scanner</span></span><p>Weather data by <a href="https://www.visualcrossing.com/weather-api/">Visual Crossing</a></p><span>© ${new Date().getFullYear()} Clebson Web Dev</span></footer>
+    ${renderFooter()}
     <dialog class="saved-drawer" aria-labelledby="saved-title"><div class="drawer-heading"><div><p class="eyebrow">YOUR PLACES</p><h2 id="saved-title">Saved locations</h2></div><button class="icon-button" data-action="close-saved" aria-label="Close saved locations">×</button></div><p class="drawer-intro">A little closer, wherever you are.</p><div id="saved-content"></div></dialog>
     <dialog class="alert-dialog" aria-labelledby="alert-title"><div class="drawer-heading"><h2 id="alert-title">Weather alerts</h2><button class="icon-button" data-action="close-alert" aria-label="Close alerts">×</button></div><div id="alert-content"></div></dialog><div class="sr-only" id="announcer" role="status" aria-live="polite"></div>`;
 
@@ -74,6 +82,7 @@ export function mountApp(root, { store, storage, search }) {
   }
 
   function renderSuggestions(value) {
+    root.querySelector(".recent-searches").open = false;
     suggestions = suggestLocations(value);
     activeSuggestion = -1;
     if (!suggestions.length) {
@@ -233,9 +242,11 @@ export function mountApp(root, { store, storage, search }) {
     error.textContent = state.error?.field ? state.error.message : "";
     error.hidden = !error.textContent;
     input.setAttribute("aria-invalid", String(Boolean(state.error?.field)));
-    root.querySelector("#recent-list").innerHTML = state.recent.length
-      ? `<ul>${state.recent.map((place, index) => `<li><button class="quiet-button" data-recent="${index}" data-focus="recent-${index}">${esc(place.label)}</button></li>`).join("")}</ul><button class="quiet-button" data-action="clear-recent" data-focus="clear-recent">Clear recent searches</button>`
-      : '<p class="subtle">Successful searches will appear here.</p>';
+    root.querySelector("#recent-list").innerHTML =
+      '<p class="search-menu-title">Recent searches</p>' +
+      (state.recent.length
+        ? `<ul>${state.recent.map((place, index) => `<li><button class="quiet-button" data-recent="${index}" data-focus="recent-${index}">${esc(place.label)}</button></li>`).join("")}</ul><button class="quiet-button" data-action="clear-recent" data-focus="clear-recent">Clear recent searches</button>`
+        : '<p class="subtle">Successful searches will appear here.</p>');
     root.querySelector("#weather-status").innerHTML = renderStatus(state);
     const alerts = weather ? activeAlerts(weather, now) : [];
     displayedAlertSignature = JSON.stringify(alerts);
@@ -355,6 +366,26 @@ export function mountApp(root, { store, storage, search }) {
     if (option) chooseSuggestion(Number(option.dataset.suggestionIndex));
   });
 
+  const recentSearches = root.querySelector(".recent-searches");
+  recentSearches.addEventListener("toggle", () => {
+    if (recentSearches.open) hideSuggestions();
+  });
+  recentSearches.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !recentSearches.open) return;
+    event.preventDefault();
+    recentSearches.open = false;
+    recentSearches.querySelector("summary").focus();
+  });
+  root.querySelector(".search-region").addEventListener("focusout", (event) => {
+    if (
+      event.relatedTarget &&
+      !event.currentTarget.contains(event.relatedTarget)
+    ) {
+      hideSuggestions();
+      recentSearches.open = false;
+    }
+  });
+
   root.addEventListener("submit", (event) => {
     if (!event.target.matches(".search-form, .add-location-form")) return;
     event.preventDefault();
@@ -376,7 +407,10 @@ export function mountApp(root, { store, storage, search }) {
   });
 
   root.addEventListener("click", (event) => {
-    if (!event.target.closest(".search-region")) hideSuggestions();
+    if (!event.target.closest(".search-region")) {
+      hideSuggestions();
+      recentSearches.open = false;
+    }
     const button = event.target.closest("button");
     if (
       !button ||

@@ -1,16 +1,49 @@
 /* Live data additions; the original Solaris layout and tokens stay in styles.css. */
 .search-region {
-  flex: 1;
-  min-width: 240px;
+  grid-area: search;
+  min-width: 0;
+}
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   position: relative;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding-inline: 4px;
+  background: #ffffff05;
 }
 .search-region .search-form {
+  min-width: 0;
   max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0 4px 0 10px;
+}
+.search-region .search-form input {
+  min-height: 48px;
+}
+.search-region .search-submit {
+  flex-shrink: 0;
+  min-width: 52px;
+}
+.search-controls:focus-within {
+  border-color: var(--amber);
+}
+.search-controls:has(.search-form input:focus-visible) {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+.search-region .search-form input:focus-visible {
+  outline: none;
+}
+.search-controls:has([aria-invalid="true"]) {
+  border-color: #e8bd79;
 }
 .location-suggestions {
   position: absolute;
   z-index: 20;
-  top: 52px;
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   display: grid;
@@ -36,6 +69,7 @@
   padding: 10px 12px;
   border-radius: 5px;
   cursor: pointer;
+  overflow-wrap: anywhere;
 }
 .location-suggestion strong {
   color: var(--ivory);
@@ -56,29 +90,34 @@
   line-height: 1.5;
   margin-top: 10px;
 }
-.search-form:has([aria-invalid="true"]) {
-  border-color: #e8bd79;
-}
 .recent-searches {
   font-size: 0.875rem;
-  position: relative;
-  margin-top: 4px;
+  flex: 0 0 auto;
+  border-left: 1px solid var(--line);
+  padding-left: 4px;
 }
 .recent-searches summary {
   color: var(--muted);
-  width: fit-content;
+  width: 44px;
   min-height: 44px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  list-style: none;
 }
-.recent-searches summary::after {
-  content: "⌄";
-  margin-left: 8px;
+.recent-searches summary::-webkit-details-marker {
+  display: none;
+}
+.recent-searches summary:hover,
+.recent-searches[open] summary {
+  color: var(--amber);
+  background: #ffffff08;
 }
 #recent-list {
   position: absolute;
   z-index: 10;
-  top: 100%;
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   padding: 12px;
@@ -86,7 +125,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 14px 34px #05152066;
-  max-height: 360px;
+  max-height: min(360px, 60vh);
   overflow: auto;
 }
 #recent-list ul {
@@ -102,6 +141,13 @@
 }
 #recent-list p {
   padding: 8px;
+}
+.search-menu-title {
+  color: var(--amber);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .data-badge {
   letter-spacing: 0.08em;
@@ -314,14 +360,6 @@
   margin-bottom: 16px;
 }
 @media (max-width: 680px) {
-  .search-region {
-    order: 3;
-    flex-basis: 100%;
-    min-width: 0;
-  }
-  .search-region .search-form {
-    margin: 0;
-  }
   .data-badge {
     font-size: 0.75rem;
   }
